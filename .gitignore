@@ -76,6 +76,9 @@ desktop.ini
 # --- Claude Code (local only) ---
 .claude/settings.local.json
 
+# --- Original full-size images (the site uses images/) ---
+images-original/
+
 # --- Temp ---
 tmp/
 temp/
