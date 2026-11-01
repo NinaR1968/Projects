@@ -1,0 +1,11 @@
+{
+  "goals": [{"code":"lose_weight","label":"ירידה במשקל"},{"code":"strengthen","label":"חיזוק וכושר כללי"},{"code":"maintain_weight","label":"שמירה על משקל"}],
+  "fitness_levels": [{"code":"sedentary","label":"ישיבתי"},{"code":"low","label":"נמוכה"},{"code":"medium","label":"בינונית"},{"code":"high","label":"גבוהה"}],
+  "activity_factors": [{"min":1,"max":2,"factor":1.375},{"min":3,"max":5,"factor":1.55},{"min":6,"max":7,"factor":1.725}],
+  "body_types": [{"code":"ectomorph","label":"רזה (אקטומורף)"},{"code":"mesomorph","label":"בינוני (מזומורף)"},{"code":"endomorph","label":"רחב (אנדומורף)"}],
+  "sexes": [{"code":"female","label":"נקבה"},{"code":"male","label":"זכר"}],
+  "diet_preferences": [{"code":"none","label":"ללא העדפות"},{"code":"vegetarian","label":"צמחוני"},{"code":"vegan","label":"טבעוני"},{"code":"gluten_free","label":"ללא גלוטן"}],
+  "meal_slots": [{"code":"breakfast","label":"ארוחת בוקר"},{"code":"snack_1","label":"ארוחת ביניים 1"},{"code":"lunch","label":"ארוחת צהריים"},{"code":"snack_2","label":"ארוחת ביניים 2"},{"code":"dinner","label":"ארוחת ערב"}],
+  "training_categories": [{"code":"aerobic","label":"אירובי"},{"code":"legs","label":"רגליים"},{"code":"arms","label":"ידיים"},{"code":"abs","label":"בטן"},{"code":"shoulders","label":"כתפיים"},{"code":"back","label":"גב"}],
+  "workout_statuses": [{"code":"full","label":"בוצע מלא"},{"code":"partial","label":"בוצע חלקי"},{"code":"none","label":"לא בוצע"}]
+}

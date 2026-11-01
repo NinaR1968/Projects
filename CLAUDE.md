@@ -61,5 +61,5 @@
 
 ## פקודות הרצה
 > Claude ממלא זאת ברגע שהאפליקציה יכולה לרוץ (בדרך כלל בסיום Milestone 1), ומעדכן אם משהו משתנה.
-- **הרצה (dev):** `vercel dev` (דורש את שלבי ההכנה שב-`ARCHITECTURE.md` סעיף 8.3)
-- **בדיקות (test):** `<command, או "אין">`
+- **הרצה (dev):** `npx serve -l 3000`, ונפתח בכתובת `http://localhost:3000` (אב הטיפוס של M0. M1 יחזיר את `vercel dev`, לפי `ARCHITECTURE.md` סעיף 8.3)
+- **בדיקות (test):** `node --test`
