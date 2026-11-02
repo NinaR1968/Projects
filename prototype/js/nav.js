@@ -34,10 +34,33 @@ export function demoStrip() {
   return el('div', { class: 'demo-strip' }, el('span', { class: 'demo-label' }, 'גרסת הדגמה'), toggle, panel);
 }
 
+// A page with unsaved changes sets a guard. Leaving through the frame asks it first.
+let leaveGuard = null;
+export function setLeaveGuard(guard) {
+  leaveGuard = guard;
+}
+
+export function leave(go) {
+  if (leaveGuard) leaveGuard(go);
+  else go();
+}
+
+// A link that goes through the guard, so the page can ask before it is left.
+function guardedLink(props, ...children) {
+  return el('a', {
+    ...props,
+    onClick: (e) => {
+      if (!leaveGuard || e.ctrlKey || e.metaKey || e.shiftKey) return;
+      e.preventDefault();
+      leave(() => { location.href = props.href; });
+    },
+  }, ...children);
+}
+
 function bottomNav(active) {
   return el('nav', { class: 'bottom-nav', 'aria-label': 'ניווט ראשי' },
     el('ul', {}, NAV_ITEMS.map((item) => el('li', {},
-      el('a', { href: item.href, 'aria-current': item.key === active ? 'page' : undefined },
+      guardedLink({ href: item.href, 'aria-current': item.key === active ? 'page' : undefined },
         icon(item.icon, item.fillable ? 'fillable' : ''),
         item.label)))));
 }
@@ -45,14 +68,14 @@ function bottomNav(active) {
 function screenHeader(title, onBack) {
   const userBtn = el('button', { class: 'icon-btn', type: 'button', 'aria-label': 'תפריט משתמש' }, icon('user'));
   const menu = el('div', { class: 'popover user-menu' },
-    el('a', { class: 'menu-item', href: 'profile.html' }, 'הנתונים שלי'),
+    guardedLink({ class: 'menu-item', href: 'profile.html' }, 'הנתונים שלי'),
     el('button', {
       class: 'menu-item',
       type: 'button',
-      onClick: () => {
+      onClick: () => leave(() => {
         signOut();
         location.href = 'index.html';
-      },
+      }),
     }, 'יציאה'));
   popover(userBtn, menu);
   const back = onBack === null
@@ -61,10 +84,10 @@ function screenHeader(title, onBack) {
       class: 'icon-btn',
       type: 'button',
       'aria-label': 'חזרה',
-      onClick: onBack ?? (() => {
+      onClick: onBack ?? (() => leave(() => {
         if (history.length > 1) history.back();
         else location.href = 'nutrition.html';
-      }),
+      })),
     }, icon('right'));
   return el('header', { class: 'screen-header' }, back, el('h1', {}, title), userBtn, menu);
 }

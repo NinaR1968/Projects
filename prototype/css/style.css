@@ -180,6 +180,14 @@ main:focus { outline: none; }
 .btn-secondary { background: var(--soft-coral); color: var(--charcoal); }
 .btn-outline { background: var(--white); color: var(--deep-sage); border-color: var(--deep-sage); }
 .btn-outline:hover { background: var(--gray-50); }
+.btn-text { background: none; color: var(--deep-sage); }
+.leave-dialog {
+  border: 0; border-radius: 12px; box-shadow: var(--shadow-md); padding: 24px;
+  width: min(360px, calc(100vw - 32px)); color: var(--charcoal);
+}
+.leave-dialog::backdrop { background: rgba(39, 51, 47, 0.45); }
+.leave-dialog h2 { margin: 0 0 8px; font-size: 20px; }
+.leave-dialog p { margin: 0 0 16px; }
 .btn:disabled { background: var(--gray-100); color: var(--gray-600); border-color: transparent; cursor: not-allowed; }
 .text-link {
   display: inline-flex; align-items: center; gap: 4px; color: var(--deep-sage); font-weight: 600;
@@ -236,6 +244,11 @@ input[type='date'] { text-align: right; }
 }
 .stepper li[aria-current='step'] { color: var(--charcoal); font-weight: 700; }
 .stepper li[aria-current='step'] .num { background: var(--deep-sage); color: var(--white); }
+.step-link {
+  display: flex; flex-direction: column; align-items: center; gap: 4px; width: 100%;
+  border: 0; background: none; padding: 0; font: inherit; color: inherit; cursor: pointer; border-radius: 8px;
+}
+.step-link:hover .num { outline: 2px solid var(--deep-sage); outline-offset: 1px; }
 .measure-grid { display: grid; grid-template-columns: 1fr 128px; gap: 16px; align-items: start; }
 .silhouette { width: 128px; height: auto; color: var(--gray-300); margin-top: 24px; direction: ltr; }
 .measure-mark { fill: none; stroke: var(--deep-sage); stroke-width: 1.2; }
