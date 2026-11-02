@@ -1,0 +1,6 @@
+{
+  "sedentary": {"aerobic_minutes": 15, "sets": 2, "reps": 8},
+  "low": {"aerobic_minutes": 20, "sets": 2, "reps": 10},
+  "medium": {"aerobic_minutes": 30, "sets": 3, "reps": 12},
+  "high": {"aerobic_minutes": 40, "sets": 4, "reps": 15}
+}

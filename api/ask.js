@@ -1,24 +1,50 @@
 // The single function: POST /api/ask. Actions are listed in ARCHITECTURE 7.2.
-import foods from '../data/foods.json' with { type: 'json' };
 import lists from '../data/lists.json' with { type: 'json' };
+import { ageOn } from '../shared/calc.js';
+import { todayIL } from '../shared/dates.js';
 import { getUserId } from '../lib/auth.js';
+import { cleanProfile } from '../lib/fields.js';
 import { sendError, sendOk } from '../lib/http.js';
-import { getOwnRows } from '../lib/store.js';
+import { getProfile, insertProfile, updateProfile } from '../lib/store.js';
 
 const MAX_BODY_BYTES = 10 * 1024;
 
-// Temporary M1 action. M2 deletes it together with check.html.
-async function skeletonCheck(userId) {
-  const rows = await getOwnRows(userId);
-  return {
-    user_id: userId,
-    ...rows,
-    foods_count: foods.length,
-    lists_count: Object.keys(lists).length,
-  };
+class ApiError extends Error {
+  constructor(status, code, fields = {}) {
+    super(code);
+    this.status = status;
+    this.code = code;
+    this.fields = fields;
+  }
 }
 
-const ACTIONS = { skeleton_check: skeletonCheck };
+const withAge = (profile) => (profile ? { ...profile, age: ageOn(profile.birth_date, todayIL()) } : null);
+
+async function getProfileAction(userId) {
+  return withAge(await getProfile(userId));
+}
+
+async function saveProfile(userId, body) {
+  const today = todayIL();
+  const { profile, fields } = cleanProfile(body, lists, today);
+  if (fields) throw new ApiError(400, 'invalid_fields', fields);
+
+  // baseline is written once, on the first save only.
+  const existing = await getProfile(userId);
+  const baseline = {
+    weight_kg: profile.weight_kg,
+    waist_cm: profile.waist_cm,
+    arm_cm: profile.arm_cm,
+    leg_cm: profile.leg_cm,
+    goal: profile.goal,
+    date: today,
+  };
+  const inserted = !existing && await insertProfile(userId, profile, baseline);
+  if (!inserted) await updateProfile(userId, profile);
+  return withAge(await getProfile(userId));
+}
+
+const ACTIONS = { get_profile: getProfileAction, save_profile: saveProfile };
 
 function readBody(req) {
   try {
@@ -43,6 +69,7 @@ export default async function handler(req, res) {
 
     return sendOk(res, await run(userId, body));
   } catch (err) {
+    if (err instanceof ApiError) return sendError(res, err.status, err.code, err.fields);
     console.error('ask failed:', err?.code ?? err?.name ?? 'unknown');
     return sendError(res, 500, 'server_error');
   }

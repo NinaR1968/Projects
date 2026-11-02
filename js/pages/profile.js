@@ -1,14 +1,14 @@
 // The 4-step data wizard (DESIGN, "הזנת נתונים").
 import {
-  bmi, MIN_BMI_FOR_LOSS, RANGES, ageOn, validateProfile,
+  bmi, MIN_BMI_FOR_LOSS, NAME_MAX, RANGES, ageOn, validateProfile,
 } from '../../shared/calc.js';
 import { todayIL } from '../../shared/dates.js';
+import { callAsk } from '../api.js';
 import { getLists, labelOf } from '../data.js';
 import { errorMessage } from '../messages.js';
-import { callAsk } from '../mock-api.js';
-import { initPage } from '../nav.js';
+import { initPage, leave, setLeaveGuard } from '../nav.js';
 import {
-  choiceGroup, clear, el, fieldErrorText, selectField, setFieldError, stateCard, textField, waitingCard,
+  choiceGroup, clear, el, fieldErrorText, selectField, setFieldError, stateCard, textField,
 } from '../ui.js';
 
 const STEPS = [
@@ -66,7 +66,6 @@ async function start() {
   const today = todayIL();
   let step = 0;
   let errors = {};
-  let hasPlan = false;
   let busy = false;
 
   const frame = await initPage({
@@ -78,14 +77,12 @@ async function start() {
         step -= 1;
         errors = {};
         render();
-      } else if (frame?.profile) history.back();
+      } else if (frame?.profile) leave(() => history.back());
     },
   });
   if (!frame) return;
-  const { main, profile } = frame;
-
-  const cycles = profile ? await callAsk('get_cycles') : null;
-  hasPlan = Boolean(cycles?.ok && cycles.data.length);
+  const { main, showNav } = frame;
+  let { profile } = frame;
 
   const draft = {
     name: profile?.name ?? '',
@@ -105,8 +102,14 @@ async function start() {
 
   let birthText = formatBirthDate(draft.birth_date);
 
+  // Unsaved changes: the form now differs from what was loaded or last saved.
+  const snapshot = () => JSON.stringify([draft, birthText]);
+  let savedState = snapshot();
+  let leaving = false;
+  const isDirty = () => !leaving && snapshot() !== savedState;
+
   const toNumber = (v) => (v === '' ? '' : Number(v));
-  const fieldError = (key) => (errors[key] ? fieldErrorText(errors[key], RANGES[key]) : '');
+  const fieldError = (key) => (errors[key] ? fieldErrorText(errors[key], key === 'name' ? NAME_MAX : RANGES[key]) : '');
   const withError = (key, node) => {
     setFieldError(node, fieldError(key));
     node.dataset.field = key;
@@ -117,12 +120,24 @@ async function start() {
   }));
   const numberInput = (key, label) => textInput(key, label, 'number', { inputmode: 'decimal', step: 'any', min: RANGES[key][0], max: RANGES[key][1] });
 
+  const goTo = (index) => {
+    step = index;
+    errors = {};
+    render();
+    main.focus();
+    window.scrollTo(0, 0);
+  };
+
+  // A new user moves only with "המשך". Once a profile is saved, any step can be opened directly.
   const stepper = () => el('ol', { class: 'stepper', 'aria-label': 'שלבי האשף' },
-    STEPS.map((s, i) => el('li', { 'aria-current': i === step ? 'step' : undefined },
-      el('span', { class: 'num' }, String(i + 1)), s.name)));
+    STEPS.map((s, i) => {
+      const content = [el('span', { class: 'num' }, String(i + 1)), s.name];
+      return el('li', { 'aria-current': i === step ? 'step' : undefined },
+        profile ? el('button', { class: 'step-link', type: 'button', onClick: () => goTo(i) }, content) : content);
+    }));
 
   const stepOne = () => [
-    textInput('name', 'שם', 'text', { autocomplete: 'off' }),
+    textInput('name', 'שם', 'text', { autocomplete: 'off', maxlength: NAME_MAX }),
     withError('sex', choiceGroup({
       legend: 'מין', name: 'sex', value: draft.sex, options: SEX_LABELS, onChange: (v) => { draft.sex = v; },
     })),
@@ -239,15 +254,28 @@ async function start() {
         ['אימונים בשבוע', draft.workouts_per_week],
         ['מטרה', labelOf(lists.goals, draft.goal)],
       ]),
-      hasPlan ? stateCard('plain', 'השינוי ישפיע על התכנית הבאה, בסוף המחזור. התכנית הנוכחית לא תשתנה.') : null,
     ];
   };
 
   const statusBox = el('div', { class: 'stack' });
 
-  const nextStep = () => {
+  const allErrors = () => {
     const all = validateProfile(draft, lists, today);
     if (birthText.trim() && !draft.birth_date) all.birth_date = 'invalid_date';
+    return all;
+  };
+
+  // Opens the first step with an invalid field and shows its messages.
+  const showErrors = (all) => {
+    errors = all;
+    const first = FIELD_NAMES.find((f) => errors[f]);
+    step = Math.max(0, STEPS.findIndex((s) => s.fields.includes(first)));
+    render();
+    main.querySelector('.has-error input, .has-error select')?.focus();
+  };
+
+  const nextStep = () => {
+    const all = allErrors();
     errors = Object.fromEntries(STEPS[step].fields.filter((f) => all[f]).map((f) => [f, all[f]]));
     if (Object.keys(errors).length) {
       render();
@@ -260,46 +288,77 @@ async function start() {
     window.scrollTo(0, 0);
   };
 
+  // Returns true when the profile was saved.
   const save = async (button) => {
-    if (busy) return;
-    busy = true;
-    button.disabled = true;
+    if (busy) return false;
     statusBox.replaceChildren();
+    // Steps can be skipped once a profile exists, so every field is checked again here.
+    const all = allErrors();
+    if (Object.keys(all).length) {
+      showErrors(all);
+      return false;
+    }
+    busy = true;
+    if (button) button.disabled = true;
     const saved = await callAsk('save_profile', draft);
-    if (!saved.ok) {
-      busy = false;
-      button.disabled = false;
-      if (saved.error.code === 'invalid_fields') {
-        errors = saved.error.fields;
-        const first = FIELD_NAMES.find((f) => errors[f]);
-        step = STEPS.findIndex((s) => s.fields.includes(first));
-        render();
-      } else statusBox.replaceChildren(stateCard('error', errorMessage(saved.error.code)));
-      return;
-    }
-    if (hasPlan) {
-      busy = false;
-      button.disabled = false;
-      statusBox.replaceChildren(stateCard('success', 'הנתונים נשמרו. השינוי ישפיע על התכנית הבאה, בסוף המחזור.'));
-      return;
-    }
-    statusBox.replaceChildren(waitingCard());
-    const made = await callAsk('generate_plan');
-    if (made.ok || made.error.code === 'plan_exists') {
-      location.href = 'nutrition.html';
-      return;
-    }
     busy = false;
-    button.disabled = false;
-    statusBox.replaceChildren(stateCard('error', errorMessage(made.error.code)));
+    if (!saved.ok) {
+      if (button) button.disabled = false;
+      if (saved.error.code === 'invalid_fields') showErrors(saved.error.fields);
+      else statusBox.replaceChildren(stateCard('error', errorMessage(saved.error.code)));
+      return false;
+    }
+    // From M4 the first save also creates the plan. Until then a save only shows that it worked.
+    savedState = snapshot();
+    if (!profile) showNav();
+    profile = saved.data;
+    frame.profile = profile;
+    render();
+    statusBox.replaceChildren(stateCard('success', 'הנתונים נשמרו'));
+    return true;
   };
+
+  // Asked before leaving the wizard with unsaved changes (DESIGN, "הזנת נתונים").
+  const leaveDialog = el('dialog', { class: 'leave-dialog', 'aria-labelledby': 'leave-title' });
+  document.body.append(leaveDialog);
+  const askBeforeLeaving = (go) => {
+    if (!isDirty()) {
+      go();
+      return;
+    }
+    const proceed = () => {
+      leaving = true;
+      go();
+    };
+    const choice = (text, cls, onClick) => el('button', { class: `btn ${cls}`, type: 'button', onClick }, text);
+    leaveDialog.replaceChildren(
+      el('h2', { id: 'leave-title' }, 'יש שינויים שלא נשמרו'),
+      el('p', {}, 'מה לעשות עם השינויים?'),
+      el('div', { class: 'stack' },
+        choice('שמירה ומעבר', 'btn-primary', async () => {
+          leaveDialog.close();
+          if (await save()) proceed();
+        }),
+        choice('מעבר בלי שמירה', 'btn-outline', () => {
+          leaveDialog.close();
+          proceed();
+        }),
+        choice('ביטול', 'btn-text', () => leaveDialog.close())),
+    );
+    leaveDialog.showModal();
+  };
+  setLeaveGuard(askBeforeLeaving);
+  // Closing the tab or typing another address: only the browser's own warning is possible there.
+  window.addEventListener('beforeunload', (e) => {
+    if (isDirty()) e.preventDefault();
+  });
 
   function render() {
     const body = [stepOne, stepTwo, stepThree, stepFour][step]();
     const last = step === STEPS.length - 1;
     const primary = el('button', {
       class: 'btn btn-primary', type: 'button',
-    }, last ? (hasPlan ? 'שמירה' : 'שמירה ויצירת תכנית') : 'המשך');
+    }, last ? 'שמירה' : 'המשך');
     primary.addEventListener('click', () => (last ? save(primary) : nextStep()));
 
     const headerBack = document.querySelector('.screen-header .icon-btn[aria-label="חזרה"]');

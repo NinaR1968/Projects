@@ -1,0 +1,26 @@
+{
+  "profile": {
+    "name": "דנה (משתמשת הדגמה)",
+    "sex": "female",
+    "birth_date": "1988-05-12",
+    "height_cm": 165,
+    "weight_kg": 73,
+    "body_type": "mesomorph",
+    "waist_cm": 82,
+    "arm_cm": 28,
+    "leg_cm": 56,
+    "diet_preferences": ["none"],
+    "goal": "lose_weight",
+    "fitness_level": "medium",
+    "workouts_per_week": 4
+  },
+  "days": [
+    {"weight_kg": 73, "workout": {"status": "full", "categories": []}, "checked_slots": ["breakfast", "snack_1", "lunch", "snack_2", "dinner"], "extra_items": []},
+    {"weight_kg": 72.8, "workout": {"status": "none", "categories": []}, "checked_slots": ["breakfast", "lunch", "dinner"], "extra_items": [{"food_id": "92410310", "grams": 330}]},
+    {"weight_kg": 72.9, "workout": {"status": "partial", "categories": ["legs", "abs"]}, "checked_slots": ["breakfast", "snack_1", "lunch", "dinner"], "extra_items": []},
+    {"weight_kg": 72.6, "workout": {"status": "none", "categories": []}, "checked_slots": ["breakfast", "snack_1", "lunch", "snack_2", "dinner"], "extra_items": [{"food_id": "62110100", "grams": 40}]},
+    {"weight_kg": 72.5, "workout": {"status": "partial", "categories": ["aerobic", "arms"]}, "checked_slots": ["breakfast", "lunch", "snack_2", "dinner"], "extra_items": []},
+    {"weight_kg": 72.4, "workout": {"status": "none", "categories": []}, "checked_slots": ["breakfast", "snack_1", "lunch", "dinner"], "extra_items": [{"food_id": "61210010", "grams": 250}]},
+    {"weight_kg": 72.3, "workout": null, "checked_slots": ["breakfast", "lunch", "dinner"], "extra_items": []}
+  ]
+}

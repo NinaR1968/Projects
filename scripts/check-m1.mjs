@@ -40,7 +40,7 @@ function checkFiles() {
 
   const names = git(`grep --untracked -lE "SUPABASE_SECRET_KEY|GEMINI_API_KEY" -- "*.js" "*.mjs" "*.html" "*.json"`)
     .split('\n').filter(Boolean);
-  const allowed = ['lib/supabase.js', 'scripts/check-gemini.mjs', 'scripts/check-m1.mjs'];
+  const allowed = ['lib/supabase.js', 'scripts/check-gemini.mjs', 'scripts/check-m1.mjs', 'scripts/check-m2.mjs'];
   const stray = names.filter((n) => !allowed.includes(n));
   report('key names are read only by server code and check scripts', stray.length === 0, stray.join(', '));
 }
@@ -66,14 +66,12 @@ async function logIn(email) {
   return error ? null : data.session.access_token;
 }
 
+// skeleton_check was removed in M2, so this now goes through get_profile.
 async function ownRows(name, token) {
-  const res = await post({ action: 'skeleton_check' }, token);
+  const res = await post({ action: 'get_profile' }, token);
   const body = await res.json().catch(() => null);
   const d = body?.data;
-  const own = d && d.profile?.id === d.user_id
-    && [...d.daily_logs, ...d.weekly_cycles].every((r) => r.user_id === d.user_id);
-  report(`${name}: gets only their own rows, without role`, Boolean(own) && !('role' in d.profile),
-    d ? `${d.daily_logs.length} days, ${d.weekly_cycles.length} cycles` : `HTTP ${res.status}`);
+  report(`${name}: gets their own profile, without role`, Boolean(d?.id) && !('role' in d), `HTTP ${res.status}`);
   return d;
 }
 
@@ -131,8 +129,7 @@ await expectJson('action name from the prototype object: 400', await post({ acti
 
 const d1 = await ownRows('demo1', token1);
 const d2 = await ownRows('demo2', token2);
-report('demo1 and demo2 get different data', d1 && d2 && d1.user_id !== d2.user_id);
-report('the function imports foods.json', d1?.foods_count === FOODS_EXPECTED, `${d1?.foods_count}`);
+report('demo1 and demo2 get different data', d1 && d2 && d1.id !== d2.id);
 
 await checkLocked(null);
 await checkLocked(token1);

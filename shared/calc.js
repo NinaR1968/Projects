@@ -52,13 +52,16 @@ export const RANGES = {
   leg_cm: [25, 100],
 };
 
+export const NAME_MAX = 60;
+
 const isNum = (v) => typeof v === 'number' && Number.isFinite(v);
 const hasCode = (list, v) => list.some((x) => x.code === v);
 
 // Returns { field: errorCode } for every invalid field (PRD 4.1). Empty object means valid.
 export function validateProfile(f, lists, today) {
   const errors = {};
-  if (!f.name || !String(f.name).trim()) errors.name = 'required';
+  if (typeof f.name !== 'string' || !f.name.trim()) errors.name = 'required';
+  else if (f.name.trim().length > NAME_MAX) errors.name = 'too_long';
   if (!hasCode(lists.sexes, f.sex)) errors.sex = 'required';
 
   if (!f.birth_date) errors.birth_date = 'required';

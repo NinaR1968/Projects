@@ -31,7 +31,9 @@ const FIELD_ERRORS = {
   invalid: 'הערך לא תקין',
 };
 
-export function fieldMessage(code, range) {
-  if (code === 'out_of_range' && range) return `הערך צריך להיות בין ${range[0]} ל-${range[1]}`;
+// limit is a [min, max] range for out_of_range, or a maximum length for too_long.
+export function fieldMessage(code, limit) {
+  if (code === 'out_of_range' && Array.isArray(limit)) return `הערך צריך להיות בין ${limit[0]} ל-${limit[1]}`;
+  if (code === 'too_long' && typeof limit === 'number') return `אפשר לכתוב עד ${limit} תווים`;
   return FIELD_ERRORS[code] ?? FIELD_ERRORS.invalid;
 }

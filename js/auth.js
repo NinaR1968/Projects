@@ -9,16 +9,33 @@ function auth() {
   return client.auth;
 }
 
+// 'ok', 'invalid' (wrong email or password) or 'error' (network or service failure).
 export async function signIn(email, password) {
-  const { error } = await auth().signInWithPassword({ email, password });
-  return !error;
+  try {
+    const { error } = await auth().signInWithPassword({ email, password });
+    if (!error) return 'ok';
+    return error.status >= 400 && error.status < 500 ? 'invalid' : 'error';
+  } catch {
+    return 'error';
+  }
 }
 
 export async function signOut() {
-  await auth().signOut();
+  try {
+    await auth().signOut();
+  } catch {
+    // The local session is cleared even when the service cannot be reached.
+  }
 }
 
 export async function currentSession() {
   const { data } = await auth().getSession();
   return data.session;
+}
+
+// Every page except index.html calls this on load. It only shapes the experience; the function checks the token.
+export async function requireSession() {
+  const session = await currentSession();
+  if (!session) location.replace('index.html');
+  return session;
 }

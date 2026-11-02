@@ -1,6 +1,6 @@
 // Shared building blocks for the pages. Data text always goes in as text nodes, never as HTML.
 import { icon } from './icons.js';
-import { callAsk } from './mock-api.js';
+import { callAsk } from './api.js';
 import { errorMessage, fieldMessage } from './messages.js';
 
 let idCounter = 0;
@@ -154,7 +154,7 @@ export function expandable(head, body, extra) {
   return el('article', { class: 'exp-card' }, button, extra, panel);
 }
 
-// ---- Popover shared by the demo tools and the user menu ----
+// ---- Popover for the user menu ----
 export function popover(button, panel) {
   const close = (refocus) => {
     panel.hidden = true;

@@ -84,24 +84,11 @@ main {
 main:focus { outline: none; }
 .has-nav main { padding-bottom: calc(var(--nav-height) + 24px); }
 
-/* ---- Demo strip ---- */
-.demo-strip {
-  position: relative;
-  display: flex; align-items: center; justify-content: space-between; gap: 8px;
-  padding: 4px 16px;
-  background: var(--warm-sand);
-  font-size: 14px;
-}
-.demo-label { font-weight: 600; }
-.demo-toggle {
-  border: 0; background: none; padding: 4px; font-size: 14px; cursor: pointer;
-  text-decoration: underline; color: var(--charcoal);
-}
+/* ---- Popover (user menu) ---- */
 .popover {
   position: absolute; z-index: 30; background: var(--white); border-radius: 12px; box-shadow: var(--shadow-md);
   padding: 16px; display: flex; flex-direction: column; gap: 12px;
 }
-.demo-panel { top: 100%; left: 16px; width: min(300px, calc(100vw - 32px)); }
 
 /* ---- Screen header ---- */
 .screen-header {
@@ -180,6 +167,14 @@ main:focus { outline: none; }
 .btn-secondary { background: var(--soft-coral); color: var(--charcoal); }
 .btn-outline { background: var(--white); color: var(--deep-sage); border-color: var(--deep-sage); }
 .btn-outline:hover { background: var(--gray-50); }
+.btn-text { background: none; color: var(--deep-sage); }
+.leave-dialog {
+  border: 0; border-radius: 12px; box-shadow: var(--shadow-md); padding: 24px;
+  width: min(360px, calc(100vw - 32px)); color: var(--charcoal);
+}
+.leave-dialog::backdrop { background: rgba(39, 51, 47, 0.45); }
+.leave-dialog h2 { margin: 0 0 8px; font-size: 20px; }
+.leave-dialog p { margin: 0 0 16px; }
 .btn:disabled { background: var(--gray-100); color: var(--gray-600); border-color: transparent; cursor: not-allowed; }
 .text-link {
   display: inline-flex; align-items: center; gap: 4px; color: var(--deep-sage); font-weight: 600;
@@ -236,6 +231,11 @@ input[type='date'] { text-align: right; }
 }
 .stepper li[aria-current='step'] { color: var(--charcoal); font-weight: 700; }
 .stepper li[aria-current='step'] .num { background: var(--deep-sage); color: var(--white); }
+.step-link {
+  display: flex; flex-direction: column; align-items: center; gap: 4px; width: 100%;
+  border: 0; background: none; padding: 0; font: inherit; color: inherit; cursor: pointer; border-radius: 8px;
+}
+.step-link:hover .num { outline: 2px solid var(--deep-sage); outline-offset: 1px; }
 .measure-grid { display: grid; grid-template-columns: 1fr 128px; gap: 16px; align-items: start; }
 .silhouette { width: 128px; height: auto; color: var(--gray-300); margin-top: 24px; direction: ltr; }
 .measure-mark { fill: none; stroke: var(--deep-sage); stroke-width: 1.2; }
@@ -253,8 +253,6 @@ dl { margin: 0; display: flex; flex-direction: column; gap: 4px; }
 .login-hero { width: 100%; height: 190px; object-fit: cover; object-position: center 20%; }
 .login-title { text-align: center; display: flex; flex-direction: column; gap: 4px; }
 .login-title p { font-size: 20px; }
-.demo-users { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.demo-users .btn { min-height: 44px; font-weight: 500; font-size: 14px; }
 
 /* ---- Nutrition tiles and expandable cards ---- */
 .tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
@@ -336,7 +334,7 @@ td.num, th.num { text-align: left; }
 .num-ltr { direction: ltr; unicode-bidi: isolate; }
 
 @media (min-width: 561px) {
-  .screen-header, .demo-strip { padding-inline: 16px; }
+  .screen-header { padding-inline: 16px; }
   main { padding: 24px; }
   .has-nav main { padding-bottom: calc(var(--nav-height) + 32px); }
 }
