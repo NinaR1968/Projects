@@ -83,3 +83,6 @@ images-original/
 tmp/
 temp/
 *.tmp
+
+.vercel
+.env*
