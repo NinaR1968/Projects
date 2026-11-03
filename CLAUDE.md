@@ -62,6 +62,6 @@
 ## פקודות הרצה
 > Claude ממלא זאת ברגע שהאפליקציה יכולה לרוץ (בדרך כלל בסיום Milestone 1), ומעדכן אם משהו משתנה.
 - **הרצה (dev):** `node --env-file=.env.local scripts/dev.mjs`, ונפתח בכתובת `http://localhost:3000` (דורש את שלבי ההכנה שב-`ARCHITECTURE.md` סעיף 8.3; `vercel dev` לבדו לא קורא את `.env.local`, ראה ADR-1). אב הטיפוס (עותק קפוא ב-`prototype/`, ראה ADR-2): בהרצת ה-dev, או לבד עם `npx serve -l 3000`, בכתובת `http://localhost:3000/prototype/`
-- **בדיקות (test):** `node --test`. בדיקות התשתית של M1: `node --env-file=.env.local --env-file=.env.demo.local scripts/check-m1.mjs http://localhost:3000`. בדיקות הפרופיל של M2: אותה פקודה עם `scripts/check-m2.mjs`. בדיקות יצירת התכנית של M3: אותה פקודה עם `scripts/check-m3.mjs`
+- **בדיקות (test):** `node --test`. בדיקות התשתית של M1: `node --env-file=.env.local --env-file=.env.demo.local scripts/check-m1.mjs http://localhost:3000`. בדיקות הפרופיל של M2: אותה פקודה עם `scripts/check-m2.mjs`. בדיקות יצירת התכנית של M3: אותה פקודה עם `scripts/check-m3.mjs`. בדיקות המסכים של M4 (בלי קריאה ל-Gemini): אותה פקודה עם `scripts/check-m4.mjs`
 - **בדיקות AI:** `node --env-file=.env.local scripts/run-ai-tests.mjs [model] [--only=1,4]`, כותב את `ai-tests.md`. ההרצה הסופית ב-`gemini-3.5-flash-lite` (ADR-6, 500 קריאות ביום). קלט שכבר יש לו תוצאה מדולג, אלא אם הוא ב-`--only`
 - **בניית מאגר המזון:** `node scripts/build-foods.mjs`, אחרי שינוי ב-`scripts/menu-foods.csv` (ADR-3)

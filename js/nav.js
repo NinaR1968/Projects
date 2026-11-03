@@ -2,7 +2,9 @@
 import { callAsk } from './api.js';
 import { requireSession, signOut } from './auth.js';
 import { icon } from './icons.js';
-import { el, fatalCard, popover } from './ui.js';
+import {
+  el, fatalCard, loadingIndicator, popover,
+} from './ui.js';
 
 const NAV_ITEMS = [
   { key: 'daily', href: 'daily.html', label: 'עדכון יומי', icon: 'home', fillable: true },
@@ -73,6 +75,7 @@ export async function initPage({
 }) {
   if (!(await requireSession())) return null;
   const app = document.getElementById('app');
+  app.replaceChildren(loadingIndicator());
   const res = await callAsk('get_profile');
   if (!res.ok && res.error.code === 'unauthorized') {
     await logOut();

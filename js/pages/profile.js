@@ -8,7 +8,8 @@ import { getLists, labelOf } from '../data.js';
 import { errorMessage } from '../messages.js';
 import { initPage, leave, setLeaveGuard } from '../nav.js';
 import {
-  choiceGroup, clear, el, fieldErrorText, selectField, setFieldError, stateCard, textField,
+  choiceGroup, clear, el, fieldErrorText, generatePlanIn, loadingIndicator, noPlanCard, selectField, setFieldError,
+  stateCard, textField,
 } from '../ui.js';
 
 const STEPS = [
@@ -83,6 +84,15 @@ async function start() {
   if (!frame) return;
   const { main, showNav } = frame;
   let { profile } = frame;
+
+  // A save creates the plan while the user has no cycle yet (spec/plans/milestone-4.md, 1.2).
+  // If the check fails, a plan is assumed, so no plan is created by mistake.
+  let hasPlan = false;
+  if (profile) {
+    main.append(loadingIndicator());
+    const cycles = await callAsk('get_cycles');
+    hasPlan = !cycles.ok || cycles.data.length > 0;
+  }
 
   const draft = {
     name: profile?.name ?? '',
@@ -288,8 +298,11 @@ async function start() {
     window.scrollTo(0, 0);
   };
 
-  // Returns true when the profile was saved.
-  const save = async (button) => {
+  const toPlan = () => { location.href = 'nutrition.html'; };
+
+  // Returns true when the profile was saved, and the plan was created if there was none.
+  // openPlan moves to the nutrition plan after a plan is created.
+  const save = async (button, openPlan = false) => {
     if (busy) return false;
     statusBox.replaceChildren();
     // Steps can be skipped once a profile exists, so every field is checked again here.
@@ -301,20 +314,36 @@ async function start() {
     busy = true;
     if (button) button.disabled = true;
     const saved = await callAsk('save_profile', draft);
-    busy = false;
     if (!saved.ok) {
+      busy = false;
       if (button) button.disabled = false;
       if (saved.error.code === 'invalid_fields') showErrors(saved.error.fields);
       else statusBox.replaceChildren(stateCard('error', errorMessage(saved.error.code)));
       return false;
     }
-    // From M4 the first save also creates the plan. Until then a save only shows that it worked.
     savedState = snapshot();
     if (!profile) showNav();
     profile = saved.data;
     frame.profile = profile;
+
+    if (hasPlan) {
+      busy = false;
+      render();
+      statusBox.replaceChildren(stateCard('success', 'הנתונים נשמרו. השינוי ישפיע על התכנית הבאה, בסוף המחזור'));
+      return true;
+    }
+    // The save button stays disabled while busy, so a second click cannot start another plan.
     render();
-    statusBox.replaceChildren(stateCard('success', 'הנתונים נשמרו'));
+    const failed = await generatePlanIn(statusBox);
+    busy = false;
+    render();
+    if (failed) {
+      statusBox.replaceChildren(noPlanCard(toPlan, failed));
+      return false;
+    }
+    hasPlan = true;
+    statusBox.replaceChildren();
+    if (openPlan) toPlan();
     return true;
   };
 
@@ -356,10 +385,11 @@ async function start() {
   function render() {
     const body = [stepOne, stepTwo, stepThree, stepFour][step]();
     const last = step === STEPS.length - 1;
+    const saveLabel = hasPlan ? 'שמירה' : 'שמירה ויצירת תכנית';
     const primary = el('button', {
-      class: 'btn btn-primary', type: 'button',
-    }, last ? 'שמירה' : 'המשך');
-    primary.addEventListener('click', () => (last ? save(primary) : nextStep()));
+      class: 'btn btn-primary', type: 'button', disabled: busy,
+    }, last ? saveLabel : 'המשך');
+    primary.addEventListener('click', () => (last ? save(primary, true) : nextStep()));
 
     const headerBack = document.querySelector('.screen-header .icon-btn[aria-label="חזרה"]');
     if (headerBack) headerBack.hidden = step === 0 && !profile;

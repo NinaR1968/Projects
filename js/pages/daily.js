@@ -1,7 +1,7 @@
 import { addDays, todayIL } from '../../shared/dates.js';
 import { icon } from '../icons.js';
 import {
-  byId, getFoods, getLists, labelOf,
+  byId, getDemoFoods, getLists, labelOf,
 } from '../data.js';
 import { errorMessage, fieldMessage } from '../messages.js';
 import { callAsk } from '../mock-api.js';
@@ -34,7 +34,7 @@ async function start() {
   const frame = await initPage({ title: 'עדכון יומי', active: 'daily' });
   if (!frame) return;
   const { main } = frame;
-  const [lists, foods] = await Promise.all([getLists(), getFoods()]);
+  const [lists, foods] = await Promise.all([getLists(), getDemoFoods()]);
   const foodsById = byId(foods);
   const today = todayIL();
   let date = today;

@@ -1,9 +1,9 @@
 import { icon } from '../icons.js';
 import { byId, getFoods, getLists, labelOf } from '../data.js';
-import { callAsk } from '../mock-api.js';
+import { callAsk } from '../api.js';
 import { initPage } from '../nav.js';
 import {
-  MEAL_IMAGES, clear, el, expandable, fatalCard, noPlanCard, num,
+  MEAL_IMAGES, clear, el, expandable, fatalCard, loadingIndicator, noPlanCard, num,
 } from '../ui.js';
 
 const tile = (iconName, cls, label, value) => el('div', { class: 'tile' },
@@ -14,12 +14,14 @@ const values = (t) => [
 ];
 
 async function render(main) {
-  clear(main);
+  main.replaceChildren(loadingIndicator());
   const [lists, foods, cycles] = await Promise.all([getLists(), getFoods(), callAsk('get_cycles')]);
+  clear(main);
   if (!cycles.ok) {
     main.append(fatalCard(cycles.error.code));
     return;
   }
+  // The newest cycle is the active plan (ARCHITECTURE 3.4).
   const cycle = cycles.data[0];
   if (!cycle) {
     main.append(noPlanCard(() => render(main)));
@@ -40,9 +42,11 @@ async function render(main) {
     el('div', { class: 'stack' }, menu.meals.map((meal) => {
       const [src, alt] = MEAL_IMAGES[meal.slot];
       const name = labelOf(lists.meal_slots, meal.slot);
+      // An item whose food is missing from foods.json is not shown (PRD feature 12).
+      const items = meal.items.filter((item) => foodsById.has(item.food_id));
       return expandable(
         [el('img', { src, alt }), el('span', { class: 'exp-title' }, el('strong', {}, name))],
-        el('ul', { class: 'line-list', 'aria-label': `רכיבי ${name}` }, meal.items.map((item) => el('li', {},
+        el('ul', { class: 'line-list', 'aria-label': `רכיבי ${name}` }, items.map((item) => el('li', {},
           el('span', {}, foodsById.get(item.food_id).name),
           el('span', { class: 'amount' }, `${num(item.grams)} ג`)))),
         el('div', { class: 'meal-values' }, values(meal.totals).map(([label, v]) => el('div', {},

@@ -6,7 +6,9 @@ import { getUserId } from '../lib/auth.js';
 import { generatePlan } from '../lib/cycle.js';
 import { cleanProfile } from '../lib/fields.js';
 import { ApiError, sendError, sendOk } from '../lib/http.js';
-import { getProfile, insertProfile, updateProfile } from '../lib/store.js';
+import {
+  getProfile, insertProfile, listCycles, updateProfile,
+} from '../lib/store.js';
 
 const MAX_BODY_BYTES = 10 * 1024;
 
@@ -36,7 +38,12 @@ async function saveProfile(userId, body) {
   return withAge(await getProfile(userId));
 }
 
-const ACTIONS = { get_profile: getProfileAction, save_profile: saveProfile, generate_plan: generatePlan };
+const ACTIONS = {
+  get_profile: getProfileAction,
+  save_profile: saveProfile,
+  get_cycles: (userId) => listCycles(userId),
+  generate_plan: generatePlan,
+};
 
 function readBody(req) {
   try {

@@ -15,7 +15,7 @@ globalThis.DEMO_WAIT_MS = 0;
 const {
   callAsk, signIn, resetDemo, setDemoFailure, buildMenu, buildTrainingPlan,
 } = await import('../js/mock-api.js');
-const { getFoods, getMenus, getExercises, getPlans, getLists, byId } = await import('../js/data.js');
+const { getDemoFoods, getMenus, getDemoExercises, getPlans, getLists, byId } = await import('../js/data.js');
 const { todayIL, addDays } = await import('../shared/dates.js');
 
 const profile = {
@@ -25,7 +25,7 @@ const profile = {
 };
 
 test('every preference combination gets a matching menu near the target', async () => {
-  const [foods, menus] = await Promise.all([getFoods(), getMenus()]);
+  const [foods, menus] = await Promise.all([getDemoFoods(), getMenus()]);
   const foodsById = byId(foods);
   const combos = [['none'], ['vegetarian'], ['vegan'], ['gluten_free'], ['vegetarian', 'vegan'],
     ['vegetarian', 'gluten_free'], ['vegan', 'gluten_free'], ['vegetarian', 'vegan', 'gluten_free']];
@@ -47,14 +47,14 @@ test('every preference combination gets a matching menu near the target', async 
 });
 
 test('the two variants of a menu differ', async () => {
-  const [foods, menus] = await Promise.all([getFoods(), getMenus()]);
+  const [foods, menus] = await Promise.all([getDemoFoods(), getMenus()]);
   const a = buildMenu(['none'], 0, 2000, 100, menus, byId(foods));
   const b = buildMenu(['none'], 1, 2000, 100, menus, byId(foods));
   assert.notDeepEqual(a.meals, b.meals);
 });
 
 test('training plans fit each level and hold only allowed equipment', async () => {
-  const [exercises, plans, lists] = await Promise.all([getExercises(), getPlans(), getLists()]);
+  const [exercises, plans, lists] = await Promise.all([getDemoExercises(), getPlans(), getLists()]);
   const all = byId(exercises);
   const order = ['sedentary', 'low', 'medium', 'high'];
   for (const level of order) {
@@ -105,7 +105,7 @@ test('new user: profile, simulated failure, plan, daily, balance', async () => {
 
   const today = todayIL();
   const yesterday = addDays(today, -1);
-  const foods = byId(await getFoods());
+  const foods = byId(await getDemoFoods());
   const lists = await getLists();
   assert.equal((await callAsk('save_daily', { date: addDays(today, 1) })).error.fields.date, 'future_date');
   assert.equal((await callAsk('save_daily', { date: today, workout: { status: 'partial', categories: [] } })).error.fields.workout, 'no_category');

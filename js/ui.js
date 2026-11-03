@@ -60,26 +60,39 @@ export function stateCard(kind, message, ...extra) {
     el('div', { class: 'body' }, el('p', {}, message), ...extra));
 }
 
-export const waitingCard = () => stateCard('info', 'התכנית בהכנה. זה עשוי לקחת כמה שניות');
+// Shown while a page waits for its data. The text is there for screen readers and without motion.
+export const loadingIndicator = () => el('div', { class: 'loading', role: 'status' },
+  el('span', { class: 'spinner', 'aria-hidden': 'true' }),
+  el('span', {}, 'הנתונים בטעינה'));
+
+export const waitingCard = () =>stateCard('info', 'התכנית בהכנה. זה עשוי לקחת כמה שניות');
+
+// Shows the waiting card in box while generate_plan runs. Returns null on success, or the error code.
+// plan_exists counts as success: a plan is there either way.
+export async function generatePlanIn(box) {
+  box.replaceChildren(waitingCard());
+  const res = await callAsk('generate_plan');
+  return res.ok || res.error.code === 'plan_exists' ? null : res.error.code;
+}
 
 // "No plan yet" card with the create button, including its waiting and error states.
-export function noPlanCard(onCreated) {
+// errorCode shows a failed earlier attempt above the card.
+export function noPlanCard(onCreated, errorCode) {
   const box = el('div', { class: 'stack' });
-  const show = (errorCode) => {
+  const show = (code) => {
     const button = el('button', { class: 'btn btn-primary', type: 'button' }, 'יצירת תכנית');
     button.addEventListener('click', async () => {
       button.disabled = true;
-      box.replaceChildren(waitingCard());
-      const res = await callAsk('generate_plan');
-      if (res.ok || res.error.code === 'plan_exists') onCreated();
-      else show(res.error.code);
+      const failed = await generatePlanIn(box);
+      if (failed) show(failed);
+      else onCreated();
     });
     box.replaceChildren(...[
-      errorCode ? stateCard('error', errorMessage(errorCode)) : null,
+      code ? stateCard('error', errorMessage(code)) : null,
       stateCard('plain', 'עדיין אין תכנית. אפשר ליצור אותה עכשיו', button),
     ].filter(Boolean));
   };
-  show();
+  show(errorCode);
   return box;
 }
 

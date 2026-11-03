@@ -7,7 +7,7 @@ import { addDays, firstCycle, nextCycle, todayIL } from '../shared/dates.js';
 import { sumNutrition, scaleMenu } from '../shared/nutrition.js';
 import { buildReport } from '../shared/report.js';
 import {
-  byId, getExercises, getFoods, getLists, getMenus, getPlans, getSeed, getSummaries,
+  byId, getDemoExercises, getDemoFoods, getLists, getMenus, getPlans, getSeed, getSummaries,
 } from './data.js';
 
 const DB_KEY = 'demo_db_v1';
@@ -107,7 +107,7 @@ const activeCycle = (user) => [...user.weekly_cycles].sort((a, b) => b.cycle_sta
 
 async function createPlan(user, date, variant) {
   const [lists, foods, menus, exercises, plans] = await Promise.all([
-    getLists(), getFoods(), getMenus(), getExercises(), getPlans(),
+    getLists(), getDemoFoods(), getMenus(), getDemoExercises(), getPlans(),
   ]);
   const weight = latestWeight(user, date);
   const t = tdee(user.profile, weight, date, lists);
@@ -118,7 +118,7 @@ async function createPlan(user, date, variant) {
 }
 
 async function writeDaily(user, cycle, date, { weight_kg, workout, checked_slots, extra_items }) {
-  const [lists, foods] = await Promise.all([getLists(), getFoods()]);
+  const [lists, foods] = await Promise.all([getLists(), getDemoFoods()]);
   const foodsById = byId(foods);
   const planMeals = (checked_slots ?? []).map((slot) => ({
     slot,
@@ -255,7 +255,7 @@ const ACTIONS = {
   async save_daily(user, p) {
     const cycle = activeCycle(user);
     if (!cycle) throw new ApiError('no_plan');
-    const foodsById = byId(await getFoods());
+    const foodsById = byId(await getDemoFoods());
     checkDaily(p, foodsById, todayIL());
     const log = await writeDaily(user, cycle, p.date, p);
     const prev = user.daily_logs.find((l) => l.log_date === addDays(p.date, -1));
