@@ -1,0 +1,94 @@
+{
+  "as_of": "2026-11-02",
+  "note": "Demo data only. calorie_target was calculated by hand: BMR (Mifflin-St Jeor) x activity factor, then the goal and the floor (PRD 4.3). Ages are on as_of.",
+  "inputs": [
+    {
+      "id": 1,
+      "title": "demo1: אישה 36, צמחונית, ירידה במשקל, רמה נמוכה, 4 אימונים",
+      "profile": {"sex": "female", "birth_date": "1990-05-12", "height_cm": 165, "weight_kg": 72, "body_type": "mesomorph", "waist_cm": 82, "arm_cm": 30, "leg_cm": 56, "diet_preferences": ["vegetarian"], "goal": "lose_weight", "fitness_level": "low", "workouts_per_week": 4},
+      "calc": "BMR 720 + 1031.25 − 180 − 161 = 1410.25; × 1.55 = 2185.89; − 400 = 1785.89",
+      "calorie_target": 1785.89,
+      "expected": "תפריט צמחוני בלבד, תרגילים ברמה נמוכה ומטה, יעד 1,786"
+    },
+    {
+      "id": 2,
+      "title": "demo2: גבר 41, ללא העדפות, שמירה על משקל, רמה בינונית, 3 אימונים",
+      "profile": {"sex": "male", "birth_date": "1985-02-20", "height_cm": 178, "weight_kg": 82, "body_type": "mesomorph", "waist_cm": 90, "arm_cm": 34, "leg_cm": 58, "diet_preferences": ["none"], "goal": "maintain_weight", "fitness_level": "medium", "workouts_per_week": 3},
+      "calc": "BMR 820 + 1112.5 − 205 + 5 = 1732.5; × 1.55 = 2685.38",
+      "calorie_target": 2685.38,
+      "expected": "תפריט מכל המאגר, תרגילים ברמה בינונית ומטה, יעד 2,685"
+    },
+    {
+      "id": 3,
+      "title": "demo3: אישה 30, טבעונית וללא גלוטן, חיזוק, רמה גבוהה, 5 אימונים",
+      "profile": {"sex": "female", "birth_date": "1996-09-03", "height_cm": 170, "weight_kg": 64, "body_type": "ectomorph", "waist_cm": 72, "arm_cm": 27, "leg_cm": 52, "diet_preferences": ["vegan", "gluten_free"], "goal": "strengthen", "fitness_level": "high", "workouts_per_week": 5},
+      "calc": "BMR 640 + 1062.5 − 150 − 161 = 1391.5; × 1.55 = 2156.83; + 150 = 2306.83",
+      "calorie_target": 2306.83,
+      "expected": "תפריט טבעוני וללא גלוטן בלבד, כל התרגילים מותרים, יעד 2,307"
+    },
+    {
+      "id": 4,
+      "title": "demo4: גבר 47, ללא גלוטן, ירידה במשקל, ישיבתי, 2 אימונים",
+      "profile": {"sex": "male", "birth_date": "1978-11-30", "height_cm": 175, "weight_kg": 95, "body_type": "endomorph", "waist_cm": 104, "arm_cm": 36, "leg_cm": 62, "diet_preferences": ["gluten_free"], "goal": "lose_weight", "fitness_level": "sedentary", "workouts_per_week": 2},
+      "calc": "BMR 950 + 1093.75 − 235 + 5 = 1813.75; × 1.375 = 2493.91; − 400 = 2093.91",
+      "calorie_target": 2093.91,
+      "expected": "תפריט ללא גלוטן בלבד, רק תרגילים ברמה ישיבתית, יעד 2,094"
+    },
+    {
+      "id": 5,
+      "title": "רצפה לאישה: אישה 70, נמוכה וקלה, ירידה במשקל, ישיבתי, אימון אחד",
+      "profile": {"sex": "female", "birth_date": "1956-01-10", "height_cm": 150, "weight_kg": 48, "body_type": "ectomorph", "waist_cm": 70, "arm_cm": 24, "leg_cm": 48, "diet_preferences": ["none"], "goal": "lose_weight", "fitness_level": "sedentary", "workouts_per_week": 1},
+      "calc": "BMR 480 + 937.5 − 350 − 161 = 906.5; × 1.375 = 1246.44; − 400 = 846.44, מתחת לרצפה: 1200",
+      "calorie_target": 1200,
+      "expected": "יעד 1,200 (רצפת אישה), רק תרגילים ברמה ישיבתית"
+    },
+    {
+      "id": 6,
+      "title": "רצפה לגבר: גבר 66, נמוך וקל, ירידה במשקל, רמה נמוכה, אימון אחד",
+      "profile": {"sex": "male", "birth_date": "1960-03-01", "height_cm": 158, "weight_kg": 50, "body_type": "ectomorph", "waist_cm": 74, "arm_cm": 25, "leg_cm": 48, "diet_preferences": ["none"], "goal": "lose_weight", "fitness_level": "low", "workouts_per_week": 1},
+      "calc": "BMR 500 + 987.5 − 330 + 5 = 1162.5; × 1.375 = 1598.44; − 400 = 1198.44, מתחת לרצפה: 1500",
+      "calorie_target": 1500,
+      "expected": "יעד 1,500 (רצפת גבר), תרגילים ברמה נמוכה ומטה"
+    },
+    {
+      "id": 7,
+      "title": "גבר 19, טבעוני, חיזוק, רמה בינונית, 6 אימונים",
+      "profile": {"sex": "male", "birth_date": "2007-06-01", "height_cm": 182, "weight_kg": 75, "body_type": "mesomorph", "waist_cm": 80, "arm_cm": 32, "leg_cm": 55, "diet_preferences": ["vegan"], "goal": "strengthen", "fitness_level": "medium", "workouts_per_week": 6},
+      "calc": "BMR 750 + 1137.5 − 95 + 5 = 1797.5; × 1.725 = 3100.69; + 150 = 3250.69",
+      "calorie_target": 3250.69,
+      "expected": "תפריט טבעוני בלבד, תרגילים ברמה בינונית ומטה, יעד 3,251"
+    },
+    {
+      "id": 8,
+      "title": "אישה 44, צמחונית וללא גלוטן, שמירה על משקל, רמה בינונית, 7 אימונים",
+      "profile": {"sex": "female", "birth_date": "1982-04-20", "height_cm": 168, "weight_kg": 60, "body_type": "ectomorph", "waist_cm": 68, "arm_cm": 26, "leg_cm": 50, "diet_preferences": ["vegetarian", "gluten_free"], "goal": "maintain_weight", "fitness_level": "medium", "workouts_per_week": 7},
+      "calc": "BMR 600 + 1050 − 220 − 161 = 1269; × 1.725 = 2189.03",
+      "calorie_target": 2189.03,
+      "expected": "תפריט צמחוני וללא גלוטן בלבד, תרגילים ברמה בינונית ומטה, יעד 2,189"
+    },
+    {
+      "id": 9,
+      "title": "גבר 51, ללא העדפות, ירידה במשקל, רמה גבוהה, 5 אימונים",
+      "profile": {"sex": "male", "birth_date": "1975-08-15", "height_cm": 185, "weight_kg": 110, "body_type": "endomorph", "waist_cm": 112, "arm_cm": 38, "leg_cm": 66, "diet_preferences": ["none"], "goal": "lose_weight", "fitness_level": "high", "workouts_per_week": 5},
+      "calc": "BMR 1100 + 1156.25 − 255 + 5 = 2006.25; × 1.55 = 3109.69; − 400 = 2709.69",
+      "calorie_target": 2709.69,
+      "expected": "תפריט מכל המאגר, כל התרגילים מותרים, יעד 2,710"
+    },
+    {
+      "id": 10,
+      "title": "אישה 25, ללא גלוטן, חיזוק, ישיבתי, 3 אימונים",
+      "profile": {"sex": "female", "birth_date": "2000-12-25", "height_cm": 158, "weight_kg": 52, "body_type": "ectomorph", "waist_cm": 64, "arm_cm": 24, "leg_cm": 48, "diet_preferences": ["gluten_free"], "goal": "strengthen", "fitness_level": "sedentary", "workouts_per_week": 3},
+      "calc": "BMR 520 + 987.5 − 125 − 161 = 1221.5; × 1.55 = 1893.33; + 150 = 2043.33",
+      "calorie_target": 2043.33,
+      "expected": "תפריט ללא גלוטן בלבד, רק תרגילים ברמה ישיבתית, יעד 2,043"
+    },
+    {
+      "id": 11,
+      "title": "אישה 33, טבעונית, ירידה במשקל, רמה נמוכה, 2 אימונים",
+      "profile": {"sex": "female", "birth_date": "1993-02-14", "height_cm": 172, "weight_kg": 88, "body_type": "endomorph", "waist_cm": 96, "arm_cm": 33, "leg_cm": 60, "diet_preferences": ["vegan"], "goal": "lose_weight", "fitness_level": "low", "workouts_per_week": 2},
+      "calc": "BMR 880 + 1075 − 165 − 161 = 1629; × 1.375 = 2239.88; − 400 = 1839.88",
+      "calorie_target": 1839.88,
+      "expected": "תפריט טבעוני בלבד, תרגילים ברמה נמוכה ומטה, יעד 1,840"
+    }
+  ]
+}

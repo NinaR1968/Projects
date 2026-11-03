@@ -3,20 +3,12 @@ import lists from '../data/lists.json' with { type: 'json' };
 import { ageOn } from '../shared/calc.js';
 import { todayIL } from '../shared/dates.js';
 import { getUserId } from '../lib/auth.js';
+import { generatePlan } from '../lib/cycle.js';
 import { cleanProfile } from '../lib/fields.js';
-import { sendError, sendOk } from '../lib/http.js';
+import { ApiError, sendError, sendOk } from '../lib/http.js';
 import { getProfile, insertProfile, updateProfile } from '../lib/store.js';
 
 const MAX_BODY_BYTES = 10 * 1024;
-
-class ApiError extends Error {
-  constructor(status, code, fields = {}) {
-    super(code);
-    this.status = status;
-    this.code = code;
-    this.fields = fields;
-  }
-}
 
 const withAge = (profile) => (profile ? { ...profile, age: ageOn(profile.birth_date, todayIL()) } : null);
 
@@ -44,7 +36,7 @@ async function saveProfile(userId, body) {
   return withAge(await getProfile(userId));
 }
 
-const ACTIONS = { get_profile: getProfileAction, save_profile: saveProfile };
+const ACTIONS = { get_profile: getProfileAction, save_profile: saveProfile, generate_plan: generatePlan };
 
 function readBody(req) {
   try {

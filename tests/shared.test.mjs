@@ -40,6 +40,14 @@ test('calorie floors', () => {
   assert.equal(calorieTarget('maintain_weight', 'male', m, 20), 1500);
 });
 
+test('man 80kg 180cm age 40, maintain: the target follows the workouts per week', () => {
+  // 1730 * 1.375 = 2378.75, 1730 * 1.55 = 2681.5, 1730 * 1.725 = 2984.25
+  for (const [n, expected] of [[2, 2378.75], [3, 2681.5], [5, 2681.5], [6, 2984.25]]) {
+    const t = tdee(profile('male', 80, 180, 40, n), 80, today, lists);
+    near(calorieTarget('maintain_weight', 'male', t, bmi(80, 180)), expected);
+  }
+});
+
 test('activity factors by workouts per week', () => {
   const base = bmr('female', 64, 162, 30);
   for (const [n, f] of [[1, 1.375], [2, 1.375], [3, 1.55], [5, 1.55], [6, 1.725], [7, 1.725]]) {

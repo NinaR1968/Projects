@@ -36,8 +36,12 @@ async function render(main) {
           el('img', { src: info.img, alt: info.alt }),
           el('span', { class: 'exp-title' }, el('strong', {}, name), el('span', { class: 'small muted' }, info.text)),
         ],
-        el('ul', { class: 'line-list', 'aria-label': `תרגילי ${name}` }, c.exercises.map((e) => el('li', {},
-          el('span', {}, exerciseLine(e, exercisesById.get(e.exercise_id).name))))),
+        el('div', {},
+          c.category === 'aerobic' ? el('p', {}, 'בכל אימון: 30 דקות של אחת מהפעילויות') : null,
+          el('ul', { class: 'line-list', 'aria-label': `תרגילי ${name}` }, c.exercises.map((e) => el('li', {},
+            el('span', {}, c.category === 'aerobic'
+              ? exercisesById.get(e.exercise_id).name
+              : exerciseLine(e, exercisesById.get(e.exercise_id).name)))))),
       );
     })),
   );

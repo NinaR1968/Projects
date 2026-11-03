@@ -28,7 +28,7 @@ function checkFiles() {
   const foods = JSON.parse(readFileSync(new URL('../data/foods.json', import.meta.url), 'utf8'));
   const fieldsOk = foods.every((f) => typeof f.id === 'string' && f.name
     && ['kcal', 'protein', 'fat', 'carbs'].every((k) => Number.isFinite(f[k]))
-    && f.menu === false && Array.isArray(f.tags));
+    && typeof f.menu === 'boolean' && Array.isArray(f.tags));
   report('foods.json: count, fields and unique ids',
     foods.length === FOODS_EXPECTED && fieldsOk && new Set(foods.map((f) => f.id)).size === foods.length,
     `${foods.length} items`);
@@ -40,7 +40,10 @@ function checkFiles() {
 
   const names = git(`grep --untracked -lE "SUPABASE_SECRET_KEY|GEMINI_API_KEY" -- "*.js" "*.mjs" "*.html" "*.json"`)
     .split('\n').filter(Boolean);
-  const allowed = ['lib/supabase.js', 'scripts/check-gemini.mjs', 'scripts/check-m1.mjs', 'scripts/check-m2.mjs'];
+  const allowed = [
+    'lib/supabase.js', 'lib/gemini.js',
+    'scripts/check-gemini.mjs', 'scripts/check-m1.mjs', 'scripts/check-m2.mjs', 'scripts/check-m3.mjs',
+  ];
   const stray = names.filter((n) => !allowed.includes(n));
   report('key names are read only by server code and check scripts', stray.length === 0, stray.join(', '));
 }

@@ -55,7 +55,9 @@ export function buildTrainingPlan(profile, variant, exercises, plans, lists) {
   const categories = lists.training_categories.map(({ code }) => {
     // Hardest suitable exercises first, so the plan matches the user's level.
     const pool = exercises.filter((e) => e.category === code && LEVELS.indexOf(e.level) <= level).reverse();
-    const chosen = [0, 1, 2].slice(0, Math.min(3, pool.length)).map((i) => pool[(variant + i) % pool.length]);
+    // Aerobic lists every option: each workout is 30 minutes of one of them.
+    const chosen = code === 'aerobic' ? pool.reverse()
+      : [0, 1, 2].slice(0, Math.min(3, pool.length)).map((i) => pool[(variant + i) % pool.length]);
     return {
       category: code,
       exercises: chosen.map((e) => (code === 'aerobic'

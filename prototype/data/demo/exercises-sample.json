@@ -1,10 +1,8 @@
 [
-  {"id":"walk_fast","name":"הליכה מהירה","category":"aerobic","equipment":"bodyweight","level":"sedentary"},
-  {"id":"march_in_place","name":"צעידה במקום","category":"aerobic","equipment":"bodyweight","level":"sedentary"},
-  {"id":"step_touch","name":"צעד הצדה ונגיעה","category":"aerobic","equipment":"bodyweight","level":"low"},
-  {"id":"high_knees","name":"הרמת ברכיים במקום","category":"aerobic","equipment":"bodyweight","level":"medium"},
-  {"id":"jumping_jacks","name":"קפיצות פיסוק","category":"aerobic","equipment":"bodyweight","level":"medium"},
-  {"id":"burpees","name":"ברפיז","category":"aerobic","equipment":"bodyweight","level":"high"},
+  {"id":"walk_fast","name":"הליכה","category":"aerobic","equipment":"bodyweight","level":"sedentary"},
+  {"id":"running","name":"ריצה","category":"aerobic","equipment":"bodyweight","level":"sedentary"},
+  {"id":"cycling","name":"רכיבה על אופניים","category":"aerobic","equipment":"bodyweight","level":"sedentary"},
+  {"id":"stairs","name":"עלייה במדרגות","category":"aerobic","equipment":"bodyweight","level":"sedentary"},
 
   {"id":"chair_squat","name":"סקוואט לכיסא","category":"legs","equipment":"bodyweight","level":"sedentary"},
   {"id":"calf_raise","name":"עלייה על קצות האצבעות","category":"legs","equipment":"bodyweight","level":"sedentary"},
