@@ -42,13 +42,20 @@ function roundingTolerance(menu) {
     .reduce((sum, i) => sum + (i.grams === 5 ? 5 : 2.5) * foodsById.get(i.food_id).kcal / 100, 0.5);
 }
 
+// Numbers in the summary that are not in the progress the model got (ARCHITECTURE 5.2). Recorded, not a failure.
+function strayNumbers(text, progress) {
+  const known = new Set(JSON.stringify(progress).match(/\d+(\.\d+)?/g));
+  return [...new Set(text.replace(/,(?=\d{3})/g, '').match(/\d+(\.\d+)?/g) ?? [])].filter((n) => !known.has(n));
+}
+
 function check(input, out) {
   const p = input.profile;
+  const weightKg = input.weight_kg ?? p.weight_kg;
   const allowedFoods = new Set(menuFoods(foods, p.diet_preferences).map((f) => f.id));
   const allowedEx = new Set(allowedExercises(exercises, p.fitness_level).map((e) => e.id));
   const items = out.menu.meals.flatMap((m) => m.items);
   const planned = out.training_plan.categories.flatMap((c) => c.exercises);
-  const target = targetsFor(p, p.weight_kg, tests.as_of, lists);
+  const target = targetsFor(p, weightKg, tests.as_of, lists);
   const tolerance = roundingTolerance(out.menu);
   const kcalGap = Math.abs(out.menu.totals.kcal - target.calorie_target);
   const problems = [];
@@ -59,7 +66,12 @@ function check(input, out) {
   }
   if (kcalGap > tolerance) problems.push(`קלוריות רחוקות מהיעד (${Math.round(kcalGap)})`);
   if (Math.abs(target.calorie_target - input.calorie_target) > 0.01) problems.push('יעד שונה מהחישוב הידני');
+  const closing = input.task === 'close_cycle';
+  if (closing && !(out.summary_text?.length > 0 && out.summary_text.length <= 600)) problems.push('אין סיכום תקין');
+  const notes = closing ? strayNumbers(out.summary_text, input.previous_cycle.progress).map((n) => `מספר שלא בנתונים: ${n}`) : [];
   return {
+    notes,
+    summary_text: out.summary_text,
     pass: problems.length === 0,
     problems,
     kcal: out.menu.totals.kcal,
@@ -81,7 +93,16 @@ for (const input of tests.inputs) {
   const p = input.profile;
   try {
     const out = await buildPlan({
-      profile: p, weightKg: p.weight_kg, today: tests.as_of, foods, exercises, lists, call: pacedCall,
+      profile: p,
+      weightKg: input.weight_kg ?? p.weight_kg,
+      today: tests.as_of,
+      foods,
+      exercises,
+      lists,
+      call: pacedCall,
+      task: input.task,
+      progress: input.previous_cycle?.progress ?? null,
+      previousCycle: input.previous_cycle ?? null,
     });
     results[input.id] = { ...check(input, out), attempts: out.attempts, date };
   } catch (err) {
@@ -110,12 +131,16 @@ const proteinCell = (r) => {
 const row = (i) => {
   const r = results[i.id];
   if (!r) return `| ${i.id} | ${i.title} | ${i.expected} | לא רץ עדיין | — | — | — | — |`;
-  const actual = r.problems.length ? r.problems.join(', ')
-    : `${r.meals} ארוחות, ${r.categories} קטגוריות, כל המזונות והתרגילים מותרים`;
+  const actual = (r.problems.length ? r.problems.join(', ')
+    : `${r.meals} ארוחות, ${r.categories} קטגוריות, כל המזונות והתרגילים מותרים${r.summary_text ? ', סיכום תקין' : ''}`)
+    + (r.notes?.length ? ` (הערה: ${r.notes.join(', ')})` : '');
   return `| ${i.id} | ${i.title} | ${i.expected} | ${actual} | ${r.pass ? '✅ עבר' : '❌ נכשל'} | ${fmt(r.kcal)} / ${fmt(r.target)} (±${r.tolerance ?? '—'}) | ${proteinCell(r)} | ${r.attempts} |`;
 };
 
-const md = `# בדיקות AI: יצירת תפריט ותכנית (generate_plan)
+const closeInputs = tests.inputs.filter((i) => i.task === 'close_cycle');
+const summaries = closeInputs.map((i) => `**${i.id}. ${i.title}:** ${results[i.id]?.summary_text ?? 'לא רץ עדיין'}`).join('\n\n');
+
+const md = `# בדיקות AI: יצירת תפריט ותכנית (generate_plan) וסיום מחזור (close_cycle)
 
 **דגם:** \`${model}\` · **תאריך ההרצה האחרונה:** ${date} · **תאריך החישוב (גיל):** ${tests.as_of}
 **אחוז הצלחה:** ${passed} מתוך ${done.length} (${done.length ? Math.round((100 * passed) / done.length) : 0}%). היעד: 8 מתוך 10 לפחות.
@@ -129,6 +154,8 @@ ${done.length < tests.inputs.length ? `\n**שימו לב:** ${tests.inputs.lengt
 3. סך הקלוריות בתוך טווח העיגול של התאמת הגרמים (העמודה ±).
 4. יעד הקלוריות שווה לחישוב הידני.
 
+בקלטים של סיום מחזור (${closeInputs.map((i) => i.id).join(', ')}) נבדק בנוסף שיש \`summary_text\` באורך עד 600 תווים. היעד מחושב בקוד, ולכן פידבק לא יכול לשנות אותו. מספר בסיכום שלא מופיע בנתוני ההתקדמות נרשם כהערה, ואינו תנאי כשל.
+
 יעד החלבון רק נרשם, ואינו תנאי כשל.
 
 ## תוצאות
@@ -136,6 +163,10 @@ ${done.length < tests.inputs.length ? `\n**שימו לב:** ${tests.inputs.lengt
 | # | קלט | תוצאה צפויה | תוצאה בפועל | עבר? | קלוריות / יעד | חלבון / יעד (גרם) | ניסיונות |
 |---|-----|-------------|-------------|------|---------------|-------------------|----------|
 ${tests.inputs.map(row).join('\n')}
+
+## טקסט הסיכום בקלטים של סיום מחזור
+
+${summaries}
 
 ## חישוב ידני של יעד הקלוריות
 

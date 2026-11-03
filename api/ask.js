@@ -3,10 +3,11 @@ import lists from '../data/lists.json' with { type: 'json' };
 import { ageOn } from '../shared/calc.js';
 import { todayIL } from '../shared/dates.js';
 import { getUserId } from '../lib/auth.js';
-import { generatePlan } from '../lib/cycle.js';
+import { closeCycle, generatePlan } from '../lib/cycle.js';
 import { getDaily, saveDaily } from '../lib/daily.js';
 import { cleanProfile } from '../lib/fields.js';
 import { ApiError, sendError, sendOk } from '../lib/http.js';
+import { getReport, saveFeedback } from '../lib/report.js';
 import {
   getProfile, insertProfile, listCycles, updateProfile,
 } from '../lib/store.js';
@@ -46,6 +47,9 @@ const ACTIONS = {
   generate_plan: generatePlan,
   get_daily: getDaily,
   save_daily: saveDaily,
+  get_report: getReport,
+  save_feedback: saveFeedback,
+  close_cycle: closeCycle,
 };
 
 function readBody(req) {

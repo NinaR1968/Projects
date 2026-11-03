@@ -1,4 +1,4 @@
-// The one way to reach the server. Same signature as callAsk in mock-api.js.
+// The one way to reach the server.
 import { currentSession } from './auth.js';
 
 export async function callAsk(action, params = {}) {

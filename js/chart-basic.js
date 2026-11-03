@@ -1,4 +1,5 @@
-// Basic weight line chart as SVG, with time running right to left, and a table next to it.
+// Basic weight line chart as SVG, with time running left to right (product owner decision in M6, so a falling
+// weight reads as falling), and a table next to it.
 import { el, formatDate } from './ui.js';
 
 const SVG = 'http://www.w3.org/2000/svg';
@@ -20,7 +21,7 @@ export function weightChart(series) {
   const y = (v) => PAD.top + ((max - v) / (max - min)) * (H - PAD.top - PAD.bottom);
   const x = (i) => (series.length === 1
     ? W / 2
-    : W - PAD.side - (i / (series.length - 1)) * (W - 2 * PAD.side));
+    : PAD.side + (i / (series.length - 1)) * (W - 2 * PAD.side));
 
   const root = svg('svg', {
     viewBox: `0 0 ${W} ${H}`,

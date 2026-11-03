@@ -6,8 +6,8 @@ import { GeminiError } from '../lib/gemini.js';
 import {
   MIN_FOODS, allowedExercises, buildPlan, menuFoods, targetsFor,
 } from '../lib/plan.js';
-import { buildInput } from '../lib/prompts.js';
-import { validatePlan } from '../lib/validate.js';
+import { buildInput, systemInstruction } from '../lib/prompts.js';
+import { planProblem, validatePlan } from '../lib/validate.js';
 
 const load = (path) => JSON.parse(readFileSync(new URL(path, import.meta.url)));
 const lists = load('../data/lists.json');
@@ -213,4 +213,21 @@ test('a menu too far from the target (factor outside 0.5–1.5) is invalid', asy
   const model = fakeModel([far]);
   await assert.rejects(run(p, model.call), { code: 'ai_failed' });
   assert.equal(model.calls.length, 2);
+});
+
+test('summary_text is required only for close_cycle', () => {
+  const sentFoods = menuFoods(foods, ['none']);
+  const sent = allowedExercises(exercises, 'high').filter((e) => e.category !== 'aerobic');
+  const input = buildInput({
+    profile: profile(), age: 36, weightKg: 72, targets: { calorie_target: 1800, protein_target: 115 }, foods: sentFoods, exercises: sent, lists,
+  });
+  const out = fakeOutput(input);
+  assert.equal(planProblem(out, sentFoods, sent, lists), null);
+  assert.equal(planProblem(out, sentFoods, sent, lists, { needSummary: true }), 'summary_text');
+  assert.equal(planProblem({ ...out, summary_text: 'א'.repeat(601) }, sentFoods, sent, lists, { needSummary: true }), 'summary_text');
+  assert.equal(planProblem({ ...out, summary_text: 'סיכום' }, sentFoods, sent, lists, { needSummary: true }), null);
+  assert.equal(input.task, 'generate_plan');
+  assert.deepEqual([input.progress, input.feedback, input.previous_plan], [null, null, null]);
+  assert.doesNotMatch(systemInstruction(), /close_cycle/);
+  assert.match(systemInstruction('close_cycle'), /summary_text/);
 });

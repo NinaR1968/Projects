@@ -14,13 +14,6 @@ function load(path) {
 export const getLists = () => load('data/lists.json');
 export const getFoods = () => load('data/foods.json');
 export const getExercises = () => load('data/exercises.json');
-// Prototype data, used only by mock-api.js and the screens not connected yet (ADR-2).
-export const getDemoFoods = () => load('data/demo/foods-sample.json');
-export const getDemoExercises = () => load('data/demo/exercises-sample.json');
-export const getMenus = () => load('data/demo/menus.json');
-export const getPlans = () => load('data/demo/plans.json');
-export const getSummaries = () => load('data/demo/summaries.json');
-export const getSeed = () => load('data/demo/seed.json');
 
 export const byId = (rows) => new Map(rows.map((r) => [r.id, r]));
 export const labelOf = (list, code) => list.find((x) => x.code === code)?.label ?? code;

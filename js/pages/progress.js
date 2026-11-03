@@ -3,10 +3,10 @@ import { weightChart, weightTable } from '../chart-basic.js';
 import { getLists, labelOf } from '../data.js';
 import { icon } from '../icons.js';
 import { errorMessage, fieldMessage } from '../messages.js';
-import { callAsk } from '../mock-api.js';
+import { callAsk } from '../api.js';
 import { initPage } from '../nav.js';
 import {
-  clear, el, fatalCard, formatDate, nextId, noPlanCard, num, setFieldError, stateCard, waitingCard,
+  clear, el, fatalCard, formatDate, loadingIndicator, nextId, noPlanCard, num, setFieldError, stateCard, waitingCard,
 } from '../ui.js';
 
 const signed = (n) => (n > 0 ? `+${num(n)}` : n < 0 ? `−${num(Math.abs(n))}` : '0');
@@ -83,12 +83,12 @@ function feedbackForm(cycle, onSaved) {
     training.node, menu.node, status, save);
 }
 
-function savedFeedback(feedback) {
+function savedFeedback(feedback, received) {
   return el('section', { class: 'card' },
     el('h2', {}, 'הפידבק שנשמר'),
-    feedback?.training ? el('p', {}, el('strong', {}, 'על האימונים: '), feedback.training) : null,
-    feedback?.menu ? el('p', {}, el('strong', {}, 'על התפריט: '), feedback.menu) : null,
-    !feedback ? el('p', {}, 'לא התקבל פידבק') : null);
+    received && feedback?.training ? el('p', {}, el('strong', {}, 'על האימונים: '), feedback.training) : null,
+    received && feedback?.menu ? el('p', {}, el('strong', {}, 'על התפריט: '), feedback.menu) : null,
+    !received ? el('p', {}, 'לא התקבל פידבק') : null);
 }
 
 async function start() {
@@ -101,6 +101,7 @@ async function start() {
   let closing = false;
 
   const load = async () => {
+    main.replaceChildren(loadingIndicator());
     const res = await callAsk('get_cycles');
     clear(main);
     if (!res.ok) {
@@ -117,8 +118,9 @@ async function start() {
 
   const closeButton = (cycle, status) => {
     const ended = todayIL() > cycle.cycle_end;
+    const hintId = nextId('close-hint');
     const button = el('button', {
-      class: 'btn btn-primary', type: 'button', disabled: !ended,
+      class: 'btn btn-primary', type: 'button', disabled: !ended, ...(ended ? {} : { 'aria-describedby': hintId }),
     }, 'סיום מחזור וקבלת תכנית חדשה');
     button.addEventListener('click', async () => {
       if (closing) return;
@@ -129,6 +131,10 @@ async function start() {
       closing = false;
       if (res.ok || res.error.code === 'cycle_closed') {
         const list = await callAsk('get_cycles');
+        if (!list.ok) {
+          main.replaceChildren(fatalCard(list.error.code));
+          return;
+        }
         cycles = list.data;
         index = cycles.findIndex((c) => c.id === cycle.id);
         await showCycle();
@@ -141,11 +147,12 @@ async function start() {
     return el('div', { class: 'stack' },
       status,
       button,
-      ended ? null : el('p', { class: 'small' }, 'המחזור הנוכחי טרם הסתיים'));
+      ended ? null : el('p', { class: 'small', id: hintId }, 'המחזור הנוכחי טרם הסתיים'));
   };
 
   async function showCycle() {
     const shown = cycles[index];
+    main.replaceChildren(loadingIndicator());
     const res = await callAsk('get_report', { cycle_id: shown.id });
     clear(main);
     if (!res.ok) {
@@ -207,10 +214,11 @@ async function start() {
 
     if (closed) {
       main.append(el('section', { class: 'card' }, el('h2', {}, 'סיכום'), el('p', {}, report.summary_text)));
-      main.append(savedFeedback(cycle.feedback));
+      main.append(savedFeedback(cycle.feedback, report.feedback_received));
     } else {
       const ended = todayIL() > cycle.cycle_end;
       if (ended) main.append(feedbackForm(cycle, (updated) => { cycles[index] = updated; }));
+      else main.append(stateCard('plain', 'אפשר לכתוב פידבק מהיום שאחרי סוף המחזור'));
       main.append(closeButton(cycle, el('div', { class: 'stack' })));
     }
   }

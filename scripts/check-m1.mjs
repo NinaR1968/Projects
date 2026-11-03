@@ -43,6 +43,7 @@ function checkFiles() {
   const allowed = [
     'lib/supabase.js', 'lib/gemini.js',
     'scripts/check-gemini.mjs', 'scripts/check-m1.mjs', 'scripts/check-m2.mjs', 'scripts/check-m3.mjs', 'scripts/check-m4.mjs',
+    'scripts/check-m5.mjs', 'scripts/check-m6.mjs',
   ];
   const stray = names.filter((n) => !allowed.includes(n));
   report('key names are read only by server code and check scripts', stray.length === 0, stray.join(', '));
