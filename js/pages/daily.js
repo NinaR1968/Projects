@@ -1,13 +1,12 @@
 import { addDays, todayIL } from '../../shared/dates.js';
 import { icon } from '../icons.js';
-import {
-  byId, getDemoFoods, getLists, labelOf,
-} from '../data.js';
+import { byId, getFoods, getLists, labelOf } from '../data.js';
 import { errorMessage, fieldMessage } from '../messages.js';
-import { callAsk } from '../mock-api.js';
+import { callAsk } from '../api.js';
 import { initPage } from '../nav.js';
 import {
-  MEAL_IMAGES, choiceGroup, clear, el, fatalCard, formatDate, noPlanCard, num, setFieldError, stateCard, textField,
+  MEAL_IMAGES, choiceGroup, clear, el, fatalCard, formatDate, loadingIndicator, noPlanCard, num, setFieldError,
+  stateCard, textField,
 } from '../ui.js';
 
 const MAX_RESULTS = 20;
@@ -23,7 +22,9 @@ function balanceBlock(label, value, solo) {
 }
 
 function balanceCard(b) {
-  return el('section', { class: 'card', 'aria-labelledby': 'bal', role: 'status' },
+  return el('section', {
+    class: 'card', 'aria-labelledby': 'bal', role: 'status', tabindex: '-1',
+  },
     el('h2', { id: 'bal' }, 'מאזן קלוריות'),
     el('div', { class: 'balance-grid' },
       balanceBlock('היום', b.today, b.yesterday === null),
@@ -34,7 +35,15 @@ async function start() {
   const frame = await initPage({ title: 'עדכון יומי', active: 'daily' });
   if (!frame) return;
   const { main } = frame;
-  const [lists, foods] = await Promise.all([getLists(), getDemoFoods()]);
+  main.replaceChildren(loadingIndicator());
+  let lists;
+  let foods;
+  try {
+    [lists, foods] = await Promise.all([getLists(), getFoods()]);
+  } catch {
+    main.replaceChildren(fatalCard('server_error'));
+    return;
+  }
   const foodsById = byId(foods);
   const today = todayIL();
   let date = today;
@@ -42,6 +51,7 @@ async function start() {
   let saving = false;
 
   const load = async () => {
+    main.replaceChildren(loadingIndicator());
     const res = await callAsk('get_daily', { date });
     clear(main);
     if (!res.ok) {
@@ -57,7 +67,9 @@ async function start() {
       status: log?.workout?.status ?? '',
       categories: log?.workout?.status === 'partial' ? [...log.workout.categories] : [],
       checked: (log?.meals ?? []).filter((m) => m.source === 'plan').map((m) => m.slot),
-      extras: (log?.meals ?? []).filter((m) => m.source === 'manual').flatMap((m) => m.items),
+      // A saved food that is no longer in foods.json is not shown (PRD feature 12).
+      extras: (log?.meals ?? []).filter((m) => m.source === 'manual').flatMap((m) => m.items)
+        .filter((item) => foodsById.has(item.food_id)),
       weight: log?.weight_kg ?? '',
     };
     render(res.data);
@@ -251,14 +263,22 @@ async function start() {
     const save = el('button', { class: 'btn btn-primary', type: 'button' }, 'שמירת עדכון יומי');
     save.addEventListener('click', async () => {
       if (saving) return;
-      saving = true;
-      save.disabled = true;
       status.replaceChildren();
       setFieldError(weightField, '');
-      workoutSection.querySelector('.field-error')?.remove();
+      setFieldError(workoutSection, '');
+      // The same checks the function runs, so a clear mistake does not need a request.
+      const weight = form.weight === '' ? null : Number(form.weight);
+      const badWeight = weight !== null && !(weight >= WEIGHT_RANGE[0] && weight <= WEIGHT_RANGE[1]);
+      const noCategory = form.status === 'partial' && form.categories.length === 0;
+      if (badWeight || noCategory) {
+        showFieldErrors({ workout: noCategory && 'no_category', weight_kg: badWeight && 'out_of_range' });
+        return;
+      }
+      saving = true;
+      save.disabled = true;
       const res = await callAsk('save_daily', {
         date,
-        weight_kg: form.weight === '' ? null : Number(form.weight),
+        weight_kg: weight,
         workout: form.status ? { status: form.status, categories: form.categories } : null,
         checked_slots: form.checked,
         extra_items: form.extras,
@@ -267,22 +287,41 @@ async function start() {
       save.disabled = false;
       if (res.ok) {
         render(data, res.data.balance);
-        main.focus();
         window.scrollTo(0, 0);
+        main.querySelector('[aria-labelledby="bal"]').focus();
         return;
       }
       if (res.error.code !== 'invalid_fields') {
         status.replaceChildren(stateCard('error', errorMessage(res.error.code)));
         return;
       }
-      const { fields } = res.error;
-      if (fields.weight_kg) {
-        setFieldError(weightField, fieldMessage(fields.weight_kg, WEIGHT_RANGE));
-        weightField.querySelector('input').focus();
-      }
-      if (fields.workout) setFieldError(workoutSection, fieldMessage(fields.workout));
-      if (fields.date) status.replaceChildren(stateCard('error', fieldMessage(fields.date)));
+      showFieldErrors(res.error.fields);
     });
+
+    // Shows each error next to its field, and a card above the save button, where the user is looking.
+    // The first field with an error, in page order, is scrolled into view and focused.
+    function showFieldErrors(fields) {
+      if (fields.workout) setFieldError(workoutSection, fieldMessage(fields.workout));
+      if (fields.weight_kg) setFieldError(weightField, fieldMessage(fields.weight_kg, WEIGHT_RANGE));
+      const shown = [fields.workout, fields.weight_kg].filter(Boolean);
+      let message = errorMessage('invalid_fields');
+      if (fields.date) message = fieldMessage(fields.date);
+      else if (shown.length === 1 && !fields.checked_slots && !fields.extra_items) {
+        message = fields.workout ? fieldMessage(fields.workout) : fieldMessage(fields.weight_kg, WEIGHT_RANGE);
+      }
+      status.replaceChildren(stateCard('error', message));
+
+      const target = fields.workout
+        ? workoutSection.querySelector('.field-error')
+        : fields.weight_kg && weightField;
+      if (!target) return;
+      target.scrollIntoView({ block: 'center' });
+      const control = fields.workout
+        ? workoutSection.querySelector('fieldset:not([hidden]) input[type=checkbox]')
+          ?? workoutSection.querySelector('input[type=radio]')
+        : weightField.querySelector('input');
+      control?.focus({ preventScroll: true });
+    }
 
     clear(main);
     if (balance) main.append(balanceCard(balance));

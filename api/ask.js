@@ -4,6 +4,7 @@ import { ageOn } from '../shared/calc.js';
 import { todayIL } from '../shared/dates.js';
 import { getUserId } from '../lib/auth.js';
 import { generatePlan } from '../lib/cycle.js';
+import { getDaily, saveDaily } from '../lib/daily.js';
 import { cleanProfile } from '../lib/fields.js';
 import { ApiError, sendError, sendOk } from '../lib/http.js';
 import {
@@ -43,6 +44,8 @@ const ACTIONS = {
   save_profile: saveProfile,
   get_cycles: (userId) => listCycles(userId),
   generate_plan: generatePlan,
+  get_daily: getDaily,
+  save_daily: saveDaily,
 };
 
 function readBody(req) {
