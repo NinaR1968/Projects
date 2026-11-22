@@ -2,6 +2,8 @@
 <html lang="he" dir="rtl">
 <head>
   <meta charset="utf-8">
+  <!-- Clean URLs (ADR-8) serve this page at /prototype too, where relative paths would load the app's files. -->
+  <script>if (/\/prototype$/.test(location.pathname)) location.replace(`${location.pathname}/${location.search}${location.hash}`);</script>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>כניסה | כושר ותזונה</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">

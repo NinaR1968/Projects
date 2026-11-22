@@ -26,8 +26,7 @@ async function render(main) {
 
   main.append(
     el('section', { class: 'card center' },
-      el('h2', {}, 'תכנית אימונים שבועית'),
-      el('p', {}, `${plan.categories.length} קטגוריות · ${plan.workouts_per_week} אימונים בשבוע`)),
+      el('h2', {}, 'תכנית אימונים שבועית')),
     el('div', { class: 'stack' }, plan.categories.map((c) => {
       const info = CATEGORY_INFO[c.category];
       const name = labelOf(lists.training_categories, c.category);

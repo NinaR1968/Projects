@@ -87,3 +87,7 @@ temp/
 .vercel
 .env*
 !.env.example
+
+# --- Demo video (scripts/record-demo.mjs) ---
+demo-video/
+new-user-tutorial.mp4

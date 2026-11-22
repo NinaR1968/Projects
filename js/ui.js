@@ -35,6 +35,7 @@ export const MEAL_IMAGES = {
   lunch: ['images/lunch.jpg', 'ארוחת צהריים בריאה'],
   snack_2: ['images/snack_2.jpg', 'חטיף בריא'],
   dinner: ['images/dinner.jpg', 'ארוחת ערב בריאה'],
+  extra: ['images/extra.jpg', 'מזון או שתייה נוספים'],
 };
 
 export const CATEGORY_INFO = {
@@ -128,11 +129,65 @@ export function textField({ label, type = 'text', value, iconName, attrs = {}, o
     el('div', { class: `input-wrap ${iconName ? 'has-icon' : ''}` }, iconName ? icon(iconName) : null, input));
 }
 
+// On a computer the browser's list is small, so a sheet like the phone's picker opens from the bottom instead.
+// Phones keep their own picker. The select stays the real field: value, label, errors and arrow keys.
+function openPicker(select, label) {
+  const dialog = el('dialog', { class: 'picker', 'aria-label': label });
+  const close = () => {
+    dialog.close();
+    dialog.remove();
+    select.focus();
+  };
+  const choose = (value) => {
+    select.value = value;
+    select.dispatchEvent(new Event('change', { bubbles: true }));
+    close();
+  };
+  const options = [...select.options].filter((o) => o.value !== '').map((o) => {
+    const current = o.value === select.value;
+    return el('li', {},
+      el('button', {
+        class: 'picker-option', type: 'button', disabled: o.disabled, 'aria-current': current ? 'true' : undefined,
+        onClick: () => choose(o.value),
+      }, el('span', {}, o.textContent), current ? icon('check') : null));
+  });
+  dialog.append(
+    el('h2', { class: 'picker-title' }, label),
+    el('ul', { class: 'picker-list' }, options),
+    el('button', { class: 'btn btn-outline picker-cancel', type: 'button', onClick: close }, 'ביטול'),
+  );
+  // A click on the dimmed area outside the sheet closes it, like Escape.
+  dialog.addEventListener('click', (e) => { if (e.target === dialog) close(); });
+  dialog.addEventListener('cancel', (e) => {
+    e.preventDefault();
+    close();
+  });
+  document.body.append(dialog);
+  dialog.showModal();
+  (dialog.querySelector('[aria-current="true"]') ?? dialog.querySelector('.picker-option:not(:disabled)'))?.focus();
+}
+
+const OPEN_KEYS = ['Enter', ' ', 'F4'];
+
+// options: { code, label, disabled? }
 export function selectField({ label, value, options, onChange }) {
   const id = nextId('f');
   const select = el('select', { id, onChange: (e) => onChange(e.target.value) },
     el('option', { value: '', selected: !value }, 'בחירת אפשרות'),
-    options.map((o) => el('option', { value: o.code, selected: String(o.code) === String(value) }, o.label)));
+    options.map((o) => el('option', {
+      value: o.code, selected: String(o.code) === String(value), disabled: o.disabled,
+    }, o.label)));
+  const computer = () => window.matchMedia('(pointer: fine)').matches;
+  select.addEventListener('mousedown', (e) => {
+    if (!computer()) return;
+    e.preventDefault();
+    openPicker(select, label);
+  });
+  select.addEventListener('keydown', (e) => {
+    if (!computer() || !(OPEN_KEYS.includes(e.key) || (e.altKey && e.key === 'ArrowDown'))) return;
+    e.preventDefault();
+    openPicker(select, label);
+  });
   return el('div', { class: 'field' }, el('label', { for: id }, label), select);
 }
 

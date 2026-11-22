@@ -6,8 +6,10 @@ import {
   MEAL_IMAGES, clear, el, expandable, fatalCard, loadingIndicator, noPlanCard, num,
 } from '../ui.js';
 
-const tile = (iconName, cls, label, value) => el('div', { class: 'tile' },
-  icon(iconName, cls), el('span', { class: 'value' }, value), el('span', { class: 'label' }, label));
+// target is shown under the label, in Deep Sage, for calories and protein.
+const tile = (iconName, cls, label, value, target) => el('div', { class: 'tile' },
+  icon(iconName, cls), el('span', { class: 'value' }, value), el('span', { class: 'label' }, label),
+  target === undefined ? null : el('span', { class: 'target' }, `יעד ${num(target)}`));
 
 const values = (t) => [
   ['קלוריות', num(t.kcal)], ['חלבון (ג)', num(t.protein)], ['פחמימות (ג)', num(t.carbs)], ['שומן (ג)', num(t.fat)],
@@ -34,11 +36,10 @@ async function render(main) {
     el('section', { class: 'card', 'aria-labelledby': 'sum' },
       el('h2', { id: 'sum', class: 'center' }, 'סיכום יומי'),
       el('div', { class: 'tiles' },
-        tile('flame', 'ic-kcal', 'קלוריות', num(menu.totals.kcal)),
-        tile('dumbbell', 'ic-protein', 'חלבון (ג)', num(menu.totals.protein)),
+        tile('flame', 'ic-kcal', 'קלוריות', num(menu.totals.kcal), menu.calorie_target),
+        tile('dumbbell', 'ic-protein', 'חלבון (ג)', num(menu.totals.protein), menu.protein_target),
         tile('wheat', 'ic-carbs', 'פחמימות (ג)', num(menu.totals.carbs)),
-        tile('droplet', 'ic-fat', 'שומן (ג)', num(menu.totals.fat))),
-      el('p', { class: 'small center' }, `יעד חלבון ${num(menu.protein_target)} ג, בתפריט ${num(menu.totals.protein)} ג · יעד קלוריות ${num(menu.calorie_target)}`)),
+        tile('droplet', 'ic-fat', 'שומן (ג)', num(menu.totals.fat)))),
     el('div', { class: 'stack' }, menu.meals.map((meal) => {
       const [src, alt] = MEAL_IMAGES[meal.slot];
       const name = labelOf(lists.meal_slots, meal.slot);

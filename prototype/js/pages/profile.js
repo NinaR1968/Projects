@@ -4,6 +4,7 @@ import {
 } from '../../shared/calc.js';
 import { todayIL } from '../../shared/dates.js';
 import { getLists, labelOf } from '../data.js';
+import { icon } from '../icons.js';
 import { errorMessage } from '../messages.js';
 import { callAsk } from '../mock-api.js';
 import { initPage, leave, setLeaveGuard } from '../nav.js';
@@ -31,6 +32,12 @@ function parseBirthDate(text) {
 }
 
 const formatBirthDate = (iso) => (iso ? iso.split('-').reverse().join('/') : '');
+
+// Only digits are typed; the slashes are added: 15071969 -> 15/07/1969.
+function maskBirthDate(text) {
+  const d = text.replace(/[^0-9]/g, '').slice(0, 8);
+  return d.slice(0, 2) + (d.length > 2 ? `/${d.slice(2, 4)}` : '') + (d.length > 4 ? `/${d.slice(4)}` : '');
+}
 
 const BODY_PATHS = {
   female: 'M24 25h12C37 29 43 29 45 33L50 62C50.500 66 46.500 67 46 63L41 38C40 46 38 50 38 54C38 60 43 66 43 76C43 92 39 110 38 144C38 147 32 147 32 144L30 84L28 144C28 147 22 147 22 144C21 110 17 92 17 76C17 66 22 60 22 54C22 50 20 46 19 38L14 63C13.500 67 9.500 66 10 62L15 33C17 29 23 29 24 25Z',
@@ -140,23 +147,33 @@ async function start() {
         profile ? el('button', { class: 'step-link', type: 'button', onClick: () => goTo(i) }, content) : content);
     }));
 
+  const birthField = () => {
+    const field = textField({
+      label: 'תאריך לידה',
+      value: birthText,
+      iconName: 'calendar',
+      attrs: {
+        placeholder: 'dd/mm/yyyy', autocomplete: 'off', dir: 'ltr', inputmode: 'numeric', maxlength: 10,
+      },
+      onInput: (v) => {
+        const masked = maskBirthDate(v);
+        if (masked !== v) field.querySelector('input').value = masked;
+        birthText = masked;
+        draft.birth_date = parseBirthDate(masked);
+      },
+    });
+    return withError('birth_date', field);
+  };
+
   const stepOne = () => [
     textInput('name', 'שם', 'text', { autocomplete: 'off' }),
     withError('sex', choiceGroup({
       legend: 'מין', name: 'sex', value: draft.sex, options: SEX_LABELS, onChange: (v) => { draft.sex = v; },
     })),
-    withError('birth_date', textField({
-      label: 'תאריך לידה',
-      value: birthText,
-      iconName: 'calendar',
-      attrs: { placeholder: 'dd/mm/yyyy', autocomplete: 'off', dir: 'ltr' },
-      onInput: (v) => {
-        birthText = v;
-        draft.birth_date = parseBirthDate(v);
-      },
-    })),
-    numberInput('height_cm', 'גובה (ס"מ)'),
-    numberInput('weight_kg', 'משקל נוכחי (ק"ג)'),
+    birthField(),
+    el('div', { class: 'field-pair' },
+      numberInput('height_cm', 'גובה (ס"מ)'),
+      numberInput('weight_kg', 'משקל נוכחי (ק"ג)')),
   ];
 
   const stepTwo = () => [
@@ -187,32 +204,26 @@ async function start() {
     if (blocked && draft.goal === 'lose_weight') draft.goal = '';
     const diet = withError('diet_preferences', el('fieldset', { class: 'field' },
       el('legend', {}, 'העדפות תזונה'),
-      lists.diet_preferences.map((o) => el('label', { class: 'check-row' },
+      el('div', { class: 'check-grid' }, lists.diet_preferences.map((o) => el('label', { class: 'check-row' },
         el('input', {
           type: 'checkbox',
           value: o.code,
           checked: draft.diet_preferences.includes(o.code),
           onChange: (e) => dietChange(o.code, e.target.checked),
         }),
-        el('span', {}, o.label, o.code === 'gluten_free' ? el('span', { class: 'hint' }, ' (לא מתאים לצליאק או לאלרגיה)') : null)))));
-    const goals = withError('goal', el('fieldset', { class: 'field' },
-      el('legend', {}, 'מטרה עיקרית'),
-      lists.goals.map((o) => {
-        const off = o.code === 'lose_weight' && blocked;
-        return el('label', { class: `check-row ${off ? 'disabled' : ''}` },
-          el('input', {
-            type: 'radio',
-            name: 'goal',
-            value: o.code,
-            disabled: off,
-            checked: draft.goal === o.code,
-            onChange: () => { draft.goal = o.code; },
-          }),
-          el('span', {}, o.label, off ? el('span', { class: 'hint' }, ' (לא זמין לפי הגובה והמשקל שהוזנו)') : null));
-      })));
+        el('span', {}, o.label, o.code === 'gluten_free' ? el('span', { class: 'hint' }, ' (לא מתאים לצליאק או לאלרגיה)') : null))))));
+    // "ירידה במשקל" stays in the list, disabled, with the reason next to it and under the field.
+    const goals = withError('goal', selectField({
+      label: 'מטרה עיקרית',
+      value: draft.goal,
+      options: lists.goals.map((o) => (o.code === 'lose_weight' && blocked
+        ? { ...o, label: `${o.label} (לא זמין לפי הגובה והמשקל שהוזנו)`, disabled: true } : o)),
+      onChange: (v) => { draft.goal = v; },
+    }));
+    if (blocked) goals.append(el('p', { class: 'hint' }, '"ירידה במשקל" לא זמינה לפי הגובה והמשקל שהוזנו'));
     return [
       diet,
-      withError('fitness_level', selectField({
+      el('div', { class: 'field-pair' }, withError('fitness_level', selectField({
         label: 'רמת כושר נוכחית', value: draft.fitness_level, options: lists.fitness_levels, onChange: (v) => { draft.fitness_level = v; },
       })),
       withError('workouts_per_week', selectField({
@@ -220,7 +231,7 @@ async function start() {
         value: draft.workouts_per_week,
         options: [1, 2, 3, 4, 5, 6, 7].map((n) => ({ code: n, label: String(n) })),
         onChange: (v) => { draft.workouts_per_week = toNumber(v); },
-      })),
+      }))),
       goals,
     ];
   };
@@ -258,11 +269,23 @@ async function start() {
         ['אימונים בשבוע', draft.workouts_per_week],
         ['מטרה', labelOf(lists.goals, draft.goal)],
       ]),
-      hasPlan ? stateCard('plain', 'השינוי ישפיע על התכנית הבאה, בסוף המחזור. התכנית הנוכחית לא תשתנה.') : null,
     ];
   };
 
   const statusBox = el('div', { class: 'stack' });
+
+  // The confirmation after a save opens in the middle of the screen, where it is always seen.
+  const savedDialog = el('dialog', { class: 'leave-dialog notice-dialog', 'aria-labelledby': 'saved-title' });
+  document.body.append(savedDialog);
+  const showSaved = () => {
+    savedDialog.replaceChildren(
+      icon('checkCircle'),
+      el('h2', { id: 'saved-title' }, 'הנתונים נשמרו'),
+      el('p', {}, 'השינוי ישפיע על התכנית הבאה, בסוף המחזור'),
+      el('button', { class: 'btn btn-primary', type: 'button', onClick: () => savedDialog.close() }, 'סגירה'),
+    );
+    savedDialog.showModal();
+  };
 
   const allErrors = () => {
     const all = validateProfile(draft, lists, today);
@@ -320,7 +343,7 @@ async function start() {
     if (hasPlan) {
       busy = false;
       render();
-      statusBox.replaceChildren(stateCard('success', 'הנתונים נשמרו. השינוי ישפיע על התכנית הבאה, בסוף המחזור.'));
+      showSaved();
       return true;
     }
     statusBox.replaceChildren(waitingCard());
@@ -382,13 +405,13 @@ async function start() {
     if (headerBack) headerBack.hidden = step === 0 && !profile;
 
     clear(main);
+    main.classList.add('wizard');
     main.append(
       stepper(),
       el('section', { class: 'card', 'aria-labelledby': 'step-title' },
-        el('h2', { id: 'step-title' }, STEPS[step].name),
+        el('h2', { id: 'step-title', class: 'sr-only' }, STEPS[step].name),
         body.filter(Boolean)),
-      statusBox,
-      primary,
+      el('div', { class: 'wizard-footer' }, statusBox, primary),
     );
   }
 

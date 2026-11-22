@@ -144,23 +144,22 @@ async function start() {
     extrasBlock());
 
   function extrasBlock() {
-    const list = el('ul', { class: 'line-list', 'aria-label': 'מזון ושתייה שנוספו' });
+    // Each added food is a row like the meals. It is added ticked; an unticked row is not saved.
+    const list = el('div', { class: 'extras-list', role: 'group', 'aria-label': 'מזון ושתייה שנוספו' });
+    const [extraSrc, extraAlt] = MEAL_IMAGES.extra;
     const drawList = () => {
       list.hidden = form.extras.length === 0;
-      list.replaceChildren(...form.extras.map((item, i) => {
+      list.replaceChildren(...form.extras.map((item) => {
         const food = foodsById.get(item.food_id);
-        return el('li', {},
-          el('span', {}, `${food.name}, ${num(item.grams)} ג`),
-          el('span', { class: 'amount small' }, `${num(Math.round((food.kcal * item.grams) / 100))} קלוריות`),
-          el('button', {
-            class: 'icon-btn',
-            type: 'button',
-            'aria-label': `הסרת ${food.name}`,
-            onClick: () => {
-              form.extras.splice(i, 1);
-              drawList();
-            },
-          }, icon('x')));
+        return el('label', { class: 'meal-row' },
+          el('input', {
+            type: 'checkbox',
+            checked: item.checked !== false,
+            onChange: (e) => { item.checked = e.target.checked; },
+          }),
+          el('img', { src: extraSrc, alt: extraAlt }),
+          el('span', { class: 'name' }, food.name, el('span', { class: 'small muted grams' }, `${num(item.grams)} ג`)),
+          el('span', { class: 'small muted' }, `${num(Math.round((food.kcal * item.grams) / 100))} קלוריות`));
       }));
     };
     drawList();
@@ -261,11 +260,13 @@ async function start() {
         weight_kg: form.weight === '' ? null : Number(form.weight),
         workout: form.status ? { status: form.status, categories: form.categories } : null,
         checked_slots: form.checked,
-        extra_items: form.extras,
+        extra_items: form.extras.filter((x) => x.checked !== false).map(({ food_id: foodId, grams }) => ({ food_id: foodId, grams })),
       });
       saving = false;
       save.disabled = false;
       if (res.ok) {
+        // Unticked added foods were not saved, so they leave the list.
+        form.extras = form.extras.filter((x) => x.checked !== false);
         render(data, res.data.balance);
         main.focus();
         window.scrollTo(0, 0);
@@ -285,6 +286,7 @@ async function start() {
     });
 
     clear(main);
+    main.classList.add('daily');
     if (balance) main.append(balanceCard(balance));
     main.append(
       dateBar(),
